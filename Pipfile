@@ -1,0 +1,22 @@
+[[source]]
+url = "https://pypi.org/simple"
+verify_ssl = true
+name = "pypi"
+
+[packages]
+torchgeo = {extras = ["datasets", "style", "tests"], version = "*"}
+sentinelhub = {extras = ["common"], version = "*"}
+pandas = "*"
+torch = "*"
+seaborn = "*"
+matplotlib = "*"
+numpy = "*"
+wandb = "*"
+tqdm = "*"
+sklearn = "*"
+geopandas = "*"
+
+[dev-packages]
+
+[requires]
+python_version = "3.10"
