@@ -1,5 +1,6 @@
 
-![Competition_Logo](https://drivendata-public-assets.s3.amazonaws.com/conservision-banner.jpg)
+![Competition_Logo](link)
+TODO: change banner
 
 # AgroLuege cx5
 
