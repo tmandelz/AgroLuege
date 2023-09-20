@@ -28,14 +28,13 @@ collections = [collection for collection in collections if not collection["id"].
 
 collections
 #%%
-import datetime
 from sentinelhub import WebFeatureService, BBox, CRS, SHConfig
 import datetime
 import geopandas as gpd
 
 
 def get_ZueriCrop():
-    ZueriCrop_data = ZueriCrop(download=True)
+    ZueriCrop_data = ZueriCrop(root="D:/Temp/TorchGEO/",download=True)
     return ZueriCrop_data
 
 def get_Sentinel_Data(bbox,config):
@@ -46,7 +45,7 @@ def get_Sentinel_Data(bbox,config):
         search_bbox,
         search_time_interval,
         data_collection=DataCollection.SENTINEL2_L1C,
-        maxcc=0.1,
+        maxcc=0.0,
         config=config
     )
 
