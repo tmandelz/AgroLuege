@@ -27,6 +27,7 @@ collections = catalog.get_collections()
 collections = [collection for collection in collections if not collection["id"].startswith(("byoc", "batch"))]
 
 collections
+print("")
 #%%
 from sentinelhub import WebFeatureService, BBox, CRS, SHConfig
 import datetime
@@ -37,7 +38,7 @@ def get_ZueriCrop():
     ZueriCrop_data = ZueriCrop(root="D:/Temp/TorchGEO/",download=True)
     return ZueriCrop_data
 
-def get_Sentinel_Data(bbox,config):
+def get_Sentinel_Data(bbox, config):
     search_bbox = BBox(bbox=bbox, crs=CRS.WGS84)
     search_time_interval = ('2022-01-01T00:00:00', '2022-12-31T23:59:59')
 
@@ -61,8 +62,8 @@ def get_Sentinel_Data(bbox,config):
         
     return wfs_iterator
 
-get_ZueriCrop()
-# sentinel_ = get_Sentinel_Data((47.39,8.04,47.4,8.1),config)
+# get_ZueriCrop()
+sentinel_ = get_Sentinel_Data((47.39,8.04,47.4,8.1),config)
 
 # list_geom = []
 # for i in sentinel_:
