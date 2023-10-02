@@ -1,66 +1,75 @@
 # %%
-import datetime as dt
-import matplotlib.pyplot as plt
+from oauthlib.oauth2 import BackendApplicationClient
+from requests_oauthlib import OAuth2Session
 import numpy as np
-from sentinelhub import CRS, BBox, DataCollection, SHConfig
+# Your client credentials
+client_id = 'sh-442303d7-041f-4020-83a0-9878773d8317'
+client_secret = 'tVFQWveHcXfRuvAsFDAptVlyvnivMG2f'
+
+# Create a session
+client = BackendApplicationClient(client_id=client_id)
+oauth = OAuth2Session(client=client)
+
+# Get token for the session
+token = oauth.fetch_token(token_url='https://identity.dataspace.copernicus.eu/auth/realms/CDSE/protocol/openid-connect/token',
+                          client_secret=client_secret)
+
+# %%
+evalscript = """
+//VERSION=3
+function setup() {
+  return {
+    input: ["B02", "B03", "B04"],
+    output: {
+      bands: 3,
+      sampleType: "AUTO", // default value - scales the output values from [0,1] to [0,255].
+    },
+  }
+}
+
+function evaluatePixel(sample) {
+  return [2.5 * sample.B04, 2.5 * sample.B03, 2.5 * sample.B02]
+}
+"""
+
+request = {
+    "input": {
+        "bounds": {
+            "properties": {"crs": "http://www.opengis.net/def/crs/OGC/1.3/CRS84"},
+            "bbox": [
+                13.822174072265625,
+                45.85080395917834,
+                14.55963134765625,
+                46.29191774991382,
+            ],
+        },
+        "data": [
+            {
+                "type": "sentinel-2-l1c",
+                "dataFilter": {
+                    "timeRange": {
+                        "from": "2022-01-01T00:00:00Z",
+                        "to": "2022-12-31T00:00:00Z",
+                    }
+                },
+            }
+        ],
+    },
+    "output": {
+        "width": 512,
+        "height": 512,
+    },
+    "evalscript": evalscript,
+}
+
+url = "https://sh.dataspace.copernicus.eu/api/v1/process"
+response = oauth.post(url, json=request)
+# %%
+type(response.content)
+# %%
 
 
-config= SHConfig(
-    instance_id="b0be4a8f-70c8-48ad-afa7-a4c87bf9d08d",
-    sh_client_id='f721baa0-b97c-4d13-8987-94b7a5049330',
-    sh_client_secret='|_k2TatTELEJ9PWmT{&3<@+_]3.Jkj73G:dv4IBg',
-    sh_base_url='https://services.sentinel-hub.com',
-   sh_auth_base_url='https://services.sentinel-hub.com',
-)
-if config.sh_client_id == "" or config.sh_client_secret == "":
-    print("Warning! To use Sentinel Hub Catalog API, please provide the credentials (client ID and client secret).")
-
-#%%
-from sentinelhub import SentinelHubCatalog
-
-catalog = SentinelHubCatalog(config=config)
-
-catalog.get_info()
-collections = catalog.get_collections()
-
-collections = [collection for collection in collections if not collection["id"].startswith(("byoc", "batch"))]
-
-collections
-print("")
-#%%
-from sentinelhub import WebFeatureService, BBox, CRS, SHConfig
-import geopandas as gpd
-def get_Sentinel_Data(bbox, config):
-    search_bbox = BBox(bbox=bbox, crs=CRS.WGS84)
-    search_time_interval = ('2022-01-01T00:00:00', '2022-12-31T23:59:59')
-
-    wfs_iterator = WebFeatureService(
-        search_bbox,
-        search_time_interval,
-        data_collection=DataCollection.SENTINEL2_L1C,
-        maxcc=0.0,
-        config=config
-    )
-
-    ids = []
-    coords = []
-    # for tile_info in wfs_iterator:
-    #     print("\n New tile: \n")
-    #     print("coordinates info: {} \n".format(tile_info['geometry']['coordinates']))
-    #     print("id info: {} \n".format(tile_info['properties']['id']))
-    #     print("cloud info: {} \n".format(tile_info['properties']['cloudCoverPercentage']))
-    #     ids.append(tile_info['properties']['id'])
-    #     coords.append("coordinates info: {} \n".format(tile_info['geometry']['coordinates']))
-        
-    return wfs_iterator
-
-
-sentinel_ = get_Sentinel_Data((47.39,8.04,47.4,8.1),config)
-
-# list_geom = []
-# for i in sentinel_:
-#     list_geom.append(i["geometry"]["coordinates"])
-
-
-#%%
-# list_geom
+f = open('./data/here.png', 'wb')
+f.write(response.content)
+f.close()
+# %%
