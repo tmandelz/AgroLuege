@@ -19,7 +19,7 @@ evalscript = """
 //VERSION=3
 function setup() {
   return {
-    input: ["B02", "B03", "B04"],
+    input: ["B02", "B03", "B04", "B08"],
     output: {
       bands: 3,
       sampleType: "AUTO", // default value - scales the output values from [0,1] to [0,255].
@@ -28,7 +28,7 @@ function setup() {
 }
 
 function evaluatePixel(sample) {
-  return [2.5 * sample.B04, 2.5 * sample.B03, 2.5 * sample.B02]
+  return [2.5 * sample.B04, 2.5 * sample.B03, 2.5 * sample.B02, 2.5 * sample.B08]
 }
 """
 
