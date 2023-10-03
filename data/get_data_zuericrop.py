@@ -8,7 +8,7 @@ def get_ZueriCrop(file_path):
     return ZueriCrop_data
 
 # %%
-file_path = r'..\raw_data\ZueriCrop\ZueriCrop.hdf5'
+file_path = r'..\raw_data\ZueriCrop\'
 get_ZueriCrop(file_path)
 # %%
 df = h5py.File(file_path, "r", libver='latest', swmr=True)
