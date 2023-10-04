@@ -5,7 +5,7 @@ from shapely import wkt
 import numpy as np
 
 #%%
-df_landkult = pd.read_csv('bern_subset_landkult.csv')
+df_landkult = pd.read_csv('bern_landkult.csv')
 df_landkult.head()
 
 #%%
@@ -26,10 +26,10 @@ gdf.plot(column='LNF_CODE')
 
 #%% [markdown]
 """
-Der Kanton bern hat eine Fläche von 5'960 km2, die Summe der Agrarflächen, die gemäss Dokumentation im m2 angegeben ist, beträgt:
+Der Kanton Bern hat eine Fläche von 5'960 km2, die Summe der Agrarflächen [km2] beträgt:
 """
 #%%
-gdf.Shape_Area.sum()
+gdf.Shape_Area.sum()/1000**2
 
 #%%
 mask = df_landkult['LNF_CODE'].isin(labels_zueri['LNF_code'])
@@ -39,12 +39,22 @@ no_labels = df_landkult[~mask].LNF_CODE.unique()
 """
 # Kulturcode-Labels
 Die folgenden Labels kommen nicht in Züricrop vor: 
+* 509: Reis
+* 574: Quinoa
+* 575: Hanf zur Nutzung der Samen
+* 577: Anderer Hanf
+* 623: Heuwiesen im Sömmerungsgebiet, wenig intensiv genutzte Wiese
+* 693: Regionsspezifische Biodiversitätsförderfläche (Weide)
+* 694: Regionsspezifische Biodiversitätsförderfläche (Gründfläche ohne Weide)
 * 725: Permakultur
+* 730: Obstanlagen aggregiert
+* 830: Kulturen in ganzjährig geschütztem Anbau, aggregiert
 * 921: Hochstamm-Feldobstbäume
 * 922: Nussbäume
 * 923: Kastanienbäume 
 * 924: Einheimische standortgerechte Einzelbäume und Alleen
 * 927: Andere Bäume
+* 928: Andere Elemente (regionsspezifische Biodiversitätsflächen)
 
 ## Bäume
 Die 920er Labels sind überlagernde Flächen- und Punktelemente. Das bedeutet, dass diese Nutzungsflächen entweder numerisch oder geometrisch erfasst werden. Die geometrische Nutzung wird als Polygon erfasst. Die numerischen Datenerfassung erfolgt in Kombination mit einem geometrischen Bezug, indem sie als Sachdaten der entsprechden Bewirtschaftungseinheit angehängt werden.
@@ -66,5 +76,5 @@ gdf.Shape_Area.where(gdf['LNF_CODE'].isin(no_labels)).sum()/1000000
 gdf.Shape_Area.where(gdf['LNF_CODE'].isin(no_labels)).sum()/gdf.Shape_Area.sum()*100
 
 # %%
-gdf.where(gdf['LNF_CODE'].isin(no_labels)).plot(column='LNF_CODE')
+gdf.where(gdf['LNF_CODE'].isin(no_labels)).plot(column='LNF_CODE', legend=True)
 # %%
