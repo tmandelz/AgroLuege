@@ -33,7 +33,7 @@ function evaluatePixel(sample) {
 
 # Define the start and end months (as datetime objects)
 start_month = datetime(2023, 1, 1)
-end_month = datetime(2023, 2, 1)
+end_month = datetime(2023, 12, 1)
 
 # Create a loop to iterate through the months
 current_month = start_month
@@ -45,7 +45,6 @@ while current_month <= end_month:
         current_month = current_month.replace(year=current_month.year + 1, month=1)
     else:
         current_month = current_month.replace(month=current_month.month + 1)
-    
     request = {
         "input": {
             "bounds": {
@@ -62,8 +61,8 @@ while current_month <= end_month:
                     "type": "sentinel-2-l2a",
                     "dataFilter": {
                         "timeRange": {
-                            "from": f"2022-{month}-01T00:00:00Z",
-                            "to": f"2022-{month}-28T00:00:00Z",
+                            "from": current_month.strftime("%Y-%m-%dT%H:%M:%SZ"),
+                            "to": current_month.replace(month=current_month.month + 1).strftime("%Y-%m-%dT%H:%M:%SZ"),
                         }
                     },
                 }
@@ -78,26 +77,7 @@ while current_month <= end_month:
 
     url = "https://sh.dataspace.copernicus.eu/api/v1/process"
     response = oauth.post(url, json=request)
-    f = open(f'../data/here_{month}.png', 'wb')
+    f = open(f'../data/here_{current_month.month}.png', 'wb')
     f.write(response.content)
     f.close()
 
-# %%
-type(response.content)
-# %%
-f = open('../data/here_3.png', 'wb')
-f.write(response.content)
-f.close()
-# %%
-f = open('../data/here_2.png', 'wb')
-f.write(response.content)
-f.close()
-# %%
-f = open('../data/here.png', 'wb')
-f.write(response.content)
-f.close()
-
-#%%
-
-
-# %%
