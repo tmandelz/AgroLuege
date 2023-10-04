@@ -2,6 +2,8 @@
 from oauthlib.oauth2 import BackendApplicationClient
 from requests_oauthlib import OAuth2Session
 from datetime import datetime
+import datetime
+from dateutil.relativedelta import relativedelta
 # Your client credentials
 client_id = 'sh-3e5d21dd-e557-43be-a843-eb31c444dbc0'
 client_secret = 'hDgFQ77SU5QTpMcqAYiDfF9yhLqjciAB'
@@ -30,30 +32,28 @@ function evaluatePixel(sample) {
   return [2.5 * sample.B04, 2.5 * sample.B03, 2.5 * sample.B02]
 }
 """
+year = 2021  # Change this to the desired year
+# Iterate through the months (from January to December)
+for month in range(1, 13):
+    # Get the first day of the month
+    first_day = datetime.datetime(year, month, 1, 0, 0, 0, 0)
 
-# Define the start and end months (as datetime objects)
-start_month = datetime(2023, 1, 1)
-end_month = datetime(2023, 12, 1)
-
-# Create a loop to iterate through the months
-current_month = start_month
-while current_month <= end_month:
-    print(current_month)  # Print the current month and year
-    # print(end_month)
-    # Increment to the next month
-    if current_month.month == 12:
-        current_month = current_month.replace(year=current_month.year + 1, month=1)
+    # Calculate the last day of the month
+    if month == 12:
+        last_day = datetime.datetime(year + 1, 1, 1, 23, 59, 59, 999999)
     else:
-        current_month = current_month.replace(month=current_month.month + 1)
+        last_day = datetime.datetime(
+            year, month + 1, 1, 0, 0, 0, 0) - datetime.timedelta(microseconds=1)
+
+    # Print the first and last day of the month
+    print(f"Month {month}: First Day = {first_day}, Last Day = {last_day}")
     request = {
         "input": {
             "bounds": {
                 "properties": {"crs": "http://www.opengis.net/def/crs/EPSG/0/4326"},
                 "bbox": [
                     # lon,lat,lon,lat
-                    # 46.812455,7.676219,46.814992,7.681600
-                    7.676219,46.812455,7.681600,46.814992
-                    # 7.676219,46.812455,7.681600,46.814992
+                    7.676219, 46.812455, 7.681600, 46.814992
                 ],
             },
             "data": [
@@ -61,8 +61,8 @@ while current_month <= end_month:
                     "type": "sentinel-2-l2a",
                     "dataFilter": {
                         "timeRange": {
-                            "from": current_month.strftime("%Y-%m-%dT%H:%M:%SZ"),
-                            "to": current_month.replace(month=current_month.month + 1).strftime("%Y-%m-%dT%H:%M:%SZ"),
+                            "from": first_day.strftime("%Y-%m-%dT%H:%M:%SZ"),
+                            "to": last_day.strftime("%Y-%m-%dT%H:%M:%SZ"),
                         }
                     },
                 }
@@ -77,7 +77,7 @@ while current_month <= end_month:
 
     url = "https://sh.dataspace.copernicus.eu/api/v1/process"
     response = oauth.post(url, json=request)
-    f = open(f'../data/here_{current_month.month}.png', 'wb')
+    f = open(f'../data/here_{first_day.month}.png', 'wb')
     f.write(response.content)
     f.close()
-
+# %%
