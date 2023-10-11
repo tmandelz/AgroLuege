@@ -6,7 +6,7 @@ import torch.nn
 import argparse
 import os
 from dataset import Dataset
-from models.multi_stage_sequenceencoder import multistageSTARSequentialEncoder, multistageLSTMSequentialEncoder
+from models.multi_stage_sequenceencoder import multistageSTARSequentialEncoder
 from models.networkConvRef import model_2DConv
 from eval import evaluate_fieldwise
 
@@ -89,14 +89,9 @@ def main(
 
     traindataloader = torch.utils.data.DataLoader(traindataset, batch_size=batchsize, shuffle=True, num_workers=workers)
 
-    # Define the model
-    if cell == 'lstm':
-        network = multistageLSTMSequentialEncoder(24, 24, nstage=stage, nclasses=nclasses,
-                                                  nclasses_l1=nclasses_local_1, nclasses_l2=nclasses_local_2,
-                                                  input_dim=input_dim, hidden_dim=hidden, n_layers=layer,
-                                                  wo_softmax=True)
-    else:
-        network = multistageSTARSequentialEncoder(24, 24, nstage=stage, nclasses=nclasses,
+    
+    
+    network = multistageSTARSequentialEncoder(24, 24, nstage=stage, nclasses=nclasses,
                                                   nclasses_l1=nclasses_local_1, nclasses_l2=nclasses_local_2,
                                                   input_dim=input_dim, hidden_dim=hidden, n_layers=layer, cell=cell,
                                                   wo_softmax=True)
