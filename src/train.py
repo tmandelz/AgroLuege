@@ -5,10 +5,10 @@ torch.backends.cudnn.benchmark = False
 import torch.nn
 import argparse
 import os
-from dataset import Dataset
+from src.dataset import Dataset
 from models.multi_stage_sequenceencoder import multistageSTARSequentialEncoder
 from models.networkConvRef import model_2DConv
-from eval import evaluate_fieldwise
+from src.eval import evaluate_fieldwise
 
 
 def parse_args():
@@ -77,11 +77,11 @@ def main(
     nclasses_local_2 = traindataset.n_classes_local_2
 
     LOSS_WEIGHT = torch.ones(nclasses)
-    LOSS_WEIGHT[0] = 0
+    LOSS_WEIGHT[0] = 0.
     LOSS_WEIGHT_LOCAL_1 = torch.ones(nclasses_local_1)
-    LOSS_WEIGHT_LOCAL_1[0] = 0
+    LOSS_WEIGHT_LOCAL_1[0] = 0.
     LOSS_WEIGHT_LOCAL_2 = torch.ones(nclasses_local_2)
-    LOSS_WEIGHT_LOCAL_2[0] = 0
+    LOSS_WEIGHT_LOCAL_2[0] = 0.
 
     # Class stage mappping
     s1_2_s3 = traindataset.l1_2_g
@@ -185,7 +185,6 @@ def train_epoch(dataloader, network, network_gt, optimizer, loss, loss_local_1, 
             target_local_2 = target_local_2.cuda()
 
         output_glob, output_local_1, output_local_2 = network.forward(input)
-
         l_glob = loss(output_glob, target_glob)
         l_local_1 = loss_local_1(output_local_1, target_local_1)
         l_local_2 = loss_local_2(output_local_2, target_local_2)
@@ -216,43 +215,3 @@ def train_epoch(dataloader, network, network_gt, optimizer, loss, loss_local_1, 
     print('Local Loss 2: %.4f' % (mean_loss_local_2 / iteration))
     print('Global Loss: %.4f' % (mean_loss_glob / iteration))
     print('Global Loss - Refined: %.4f' % (mean_loss_gt / iteration))
-
-
-
-if __name__ == "__main__":
-    args = parse_args()
-    print(args)
-
-    model_name = str(args.name) + '_' + str(args.cell) + '_' + str(args.input_dim) + '_' + str(args.batchsize) + '_' + str(
-        args.learning_rate) + '_' + str(args.layer) + '_' + str(args.hidden) + '_' + str(args.lrSC) + '_' + str(
-        args.lambda_1) + '_' + str(args.lambda_2) + '_' + str(args.weight_decay) + '_' + str(args.fold) + '_' + str(
-        args.gt_path) + '_' + str(args.seed)
-    print(model_name)
-
-    np.random.seed(args.seed)
-    torch.manual_seed(args.seed)
-
-    main(
-        datadir=args.data,
-        batchsize=args.batchsize,
-        workers=args.workers,
-        epochs=args.epochs,
-        lr=args.learning_rate,
-        snapshot=args.snapshot,
-        checkpoint_dir=args.checkpoint_dir,
-        weight_decay=args.weight_decay,
-        name=model_name,
-        layer=args.layer,
-        hidden=args.hidden,
-        lrS=args.lrSC,
-        lambda_1=args.lambda_1,
-        lambda_2=args.lambda_2,
-        stage=args.stage,
-        clip=args.clip,
-        fold_num=args.fold,
-        gt_path=args.gt_path,
-        cell=args.cell,
-        dropout=args.dropout,
-        input_dim=args.input_dim,
-        apply_cm = args.apply_cm
-    )
