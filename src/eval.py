@@ -198,12 +198,12 @@ def evaluate_fieldwise(model, model_gt, dataset, batchsize=1, workers=8, viz=Fal
         targets = targets.reshape(-1, 24, 24)
 
         if level == 3:
-            np.savez('/home/pf/pfstaff/projects/ozgur_MSconvRNN/result/msSTAR_ch_analysis4_level_' + str(
+            np.savez('./result/msSTAR_ch_analysis4_level_' + str(
                 level) + '_fold_' + str(fold_num), targets=targets,
                      predictions_refined=prediction_wo_fieldwise_refined, cm=confusion_matrix,
                      predictions=predictions_refined_wo_unknown)
         else:
-            np.savez('/home/pf/pfstaff/projects/ozgur_MSconvRNN/result/msSTAR_ch_analysis4_level_' + str(
+            np.savez('./result/msSTAR_ch_analysis4_level_' + str(
                 level) + '_fold_' + str(fold_num), targets=targets, predictions=prediction_wo_fieldwise,
                      cm=confusion_matrix)
 
