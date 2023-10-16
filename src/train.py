@@ -76,12 +76,13 @@ def main(
     nclasses_local_1 = traindataset.n_classes_local_1
     nclasses_local_2 = traindataset.n_classes_local_2
 
+    # set weights close to zero
     LOSS_WEIGHT = torch.ones(nclasses)
-    LOSS_WEIGHT[0] = 0.
+    LOSS_WEIGHT[0] = 10**-40 
     LOSS_WEIGHT_LOCAL_1 = torch.ones(nclasses_local_1)
-    LOSS_WEIGHT_LOCAL_1[0] = 0.
+    LOSS_WEIGHT_LOCAL_1[0] = 10**-40
     LOSS_WEIGHT_LOCAL_2 = torch.ones(nclasses_local_2)
-    LOSS_WEIGHT_LOCAL_2[0] = 0.
+    LOSS_WEIGHT_LOCAL_2[0] = 10**-40
 
     # Class stage mappping
     s1_2_s3 = traindataset.l1_2_g
