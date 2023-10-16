@@ -12,22 +12,6 @@ from models.networkConvRef import model_2DConv
 from eval import evaluate_fieldwise
 
 
-# def parse_args():
-#     parser = argparse.ArgumentParser()
-#     parser.add_argument('-d', "--data", type=str, default='/scratch/tmehmet/train_set_24X24_debug.hdf5', help="path to dataset")
-#     parser.add_argument('-fd', "--fold", default=1, type=int, help="5 fold")
-#     parser.add_argument('-b', "--batchsize", default=1, type=int, help="batch size")
-#     parser.add_argument('-s', "--snapshot",type=str, help="load weights from snapshot",
-#                         default='/home/pf/pfstaff/projects/ozgur_MSconvRNN/trained_models_rep/fold1.pth',)
-#     parser.add_argument('-hd', "--hidden", default=64, type=int, help="hidden dim")
-#     parser.add_argument('-nl', "--layer", default=6, type=int, help="num layer")
-#     parser.add_argument('-stg', "--stage", default=3, type=float, help="num stage")
-#     parser.add_argument('-id', "--input_dim", default=4, type=int, help="Input channel size")
-#     parser.add_argument('-sd', "--seed", default=0, type=int, help="random seed")
-#     parser.add_argument('-gt', "--gt_path", default='labels.csv', type=str, help="gt file path")
-#     return parser.parse_args()
-
-
 def main(
         datadir=None,
         fold_num=None,
@@ -81,21 +65,3 @@ def main(
     evaluate_fieldwise(network, network_gt, testdataset, batchsize=batchsize, level=1, fold_num=fold_num,workers=num_workers)
     evaluate_fieldwise(network, network_gt, testdataset, batchsize=batchsize, level=2, fold_num=fold_num,workers=num_workers)
     evaluate_fieldwise(network, network_gt, testdataset, batchsize=batchsize, level=3, fold_num=fold_num,workers=num_workers)
-
-# if __name__ == "__main__":
-#     args = parse_args()
-#     print(args)
-#     np.random.seed(args.seed)
-#     torch.manual_seed(args.seed)
-
-#     main(
-#         datadir=args.data,
-#         fold_num=args.fold,
-#         batchsize=args.batchsize,
-#         snapshot=args.snapshot,
-#         layer=args.layer,
-#         hidden=args.hidden,
-#         stage=args.stage,
-#         gt_path=args.gt_path,
-#         input_dim=args.input_dim
-#     )
