@@ -9,42 +9,11 @@ from src.dataset import Dataset
 from models.multi_stage_sequenceencoder import multistageSTARSequentialEncoder
 from models.networkConvRef import model_2DConv
 from src.eval import evaluate_fieldwise
-
-
-def parse_args():
-    parser = argparse.ArgumentParser()
-    parser.add_argument('-d', "--data", type=str, default='/scratch/tmehmet/train_set_24X24_debug.hdf5', help="path to dataset")
-    parser.add_argument('-b', "--batchsize", default=4, type=int, help="batch size")
-    parser.add_argument('-w', "--workers", default=8, type=int, help="number of dataset worker threads")
-    parser.add_argument('-e', "--epochs", default=30, type=int, help="epochs to train")
-    parser.add_argument('-l', "--learning_rate", default=0.001, type=float, help="learning rate")
-    parser.add_argument('-s', "--snapshot", default=None,
-                        type=str, help="load weights from snapshot")
-    parser.add_argument('-c', "--checkpoint_dir", default='/home/pf/pfstaff/projects/ozgur_deep_filed/multi_stage/trained_models',
-                        type=str,help="directory to save checkpoints")
-    parser.add_argument('-wd', "--weight_decay", default=0.0001, type=float, help="weight_decay")
-    parser.add_argument('-hd', "--hidden", default=64, type=int, help="hidden dim")
-    parser.add_argument('-nl', "--layer", default=6, type=int, help="num layer")
-    parser.add_argument('-lrs', "--lrSC", default=2, type=int, help="lrScheduler")
-    parser.add_argument('-nm', "--name", default='msConvSTAR', type=str, help="name")
-    parser.add_argument('-l1', "--lambda_1", default=0.1, type=float, help="lambda_1")
-    parser.add_argument('-l2', "--lambda_2", default=0.5, type=float, help="lambda_2")
-    parser.add_argument('-dr', "--dropout", default=0.5, type=float, help="dropout of CNN")
-    parser.add_argument('-stg', "--stage", default=3, type=float, help="num stage")
-    parser.add_argument('-cp', "--clip", default=5, type=float, help="grad clip")
-    parser.add_argument('-sd', "--seed", default=0, type=int, help="random seed")
-    parser.add_argument('-fd', "--fold", default=1, type=int, help="5 fold")
-    parser.add_argument('-gt', "--gt_path", default='labels.csv', type=str, help="gt file path")
-    parser.add_argument('-cell', "--cell", default='star', type=str, help="Cell type: main building block")
-    parser.add_argument('-id', "--input_dim", default=4, type=int, help="Input channel size")
-    parser.add_argument('-cm', "--apply_cm", default=False, type=bool, help="apply cloud masking")
-
-    return parser.parse_args()
-
+import wandb
 
 def main(
         datadir=None,
-        batchsize=1,
+        batchsize=4,
         workers=12,
         epochs=1,
         lr=1e-3,
@@ -59,15 +28,24 @@ def main(
         lambda_2=1,
         stage=3,
         clip=1,
+        seed=None,
         fold_num=None,
         gt_path=None,
         cell=None,
         dropout=None,
         input_dim=None,
-        apply_cm=None
+        apply_cm=None,
+        project="test",
+        run_group="test",
+        model_architectur = "ms-convstar"
+        
+
 ):
     if not os.path.exists(checkpoint_dir):
         os.makedirs(checkpoint_dir)
+
+    np.random.seed(seed)
+    torch.manual_seed(seed)
 
     traindataset = Dataset(datadir, 0., 'train', False, fold_num, gt_path, num_channel=input_dim, apply_cloud_masking=apply_cm)
     testdataset = Dataset(datadir, 0., 'test', True, fold_num, gt_path, num_channel=input_dim, apply_cloud_masking=apply_cm)
@@ -139,19 +117,23 @@ def main(
         network_gt.load_state_dict(checkpoint['network_gt_state_dict'])
         optimizer.load_state_dict(checkpoint['optimizerA_state_dict'])
 
+    WBrun = setup_wandb_run(project,run_group,fold_num,lr,epochs,model_architectur,workers,batchsize,seed)
+
     for epoch in range(start_epoch, epochs):
         print("\nEpoch {}".format(epoch+1))
 
         train_epoch(traindataloader, network, network_gt, optimizer, loss, loss_local_1, loss_local_2,
-                    lambda_1=lambda_1, lambda_2=lambda_2, stage=stage, grad_clip=clip)
+                    lambda_1=lambda_1, lambda_2=lambda_2, stage=stage, grad_clip=clip,epoch=epoch)
 
         # call LR scheduler
         lr_scheduler.step()
 
         # evaluate model
-        if epoch > 1 and epoch % 1 == 0:
+        #if epoch > 1 and epoch % 1 == 0: change back after testing
+        if epoch % 1 == 0:
+
             print("\n Eval on test set")
-            test_acc = evaluate_fieldwise(network, network_gt, testdataset, batchsize=batchsize)
+            test_acc = evaluate_fieldwise(network, network_gt, testdataset,epoch, batchsize=batchsize,workers=0)
 
             if checkpoint_dir is not None:
                 checkpoint_name = os.path.join(checkpoint_dir, name + '_epoch_' + str(epoch) + "_model.pth")
@@ -164,7 +146,7 @@ def main(
 
 
 def train_epoch(dataloader, network, network_gt, optimizer, loss, loss_local_1, loss_local_2, lambda_1,
-                lambda_2, stage, grad_clip):
+                lambda_2, stage, grad_clip,epoch):
 
     network.train()
     network_gt.train()
@@ -200,6 +182,8 @@ def train_epoch(dataloader, network, network_gt, optimizer, loss, loss_local_1, 
         mean_loss_glob += l_glob.data.cpu().numpy()
         mean_loss_local_1 += l_local_1.data.cpu().numpy()
         mean_loss_local_2 += l_local_2.data.cpu().numpy()
+        wandb.log({"iteration": iteration,
+                  "epoch": epoch, "loss global": l_glob, "loss local 1": l_local_1,"loss local 2": l_local_2,"total loss":total_loss})
 
         # Refinement -------------------------------------------------
         output_glob_R = network_gt([output_local_1, output_local_2, output_glob])
@@ -207,6 +191,9 @@ def train_epoch(dataloader, network, network_gt, optimizer, loss, loss_local_1, 
         mean_loss_gt += l_gt.data.cpu().numpy()
 
         total_loss = total_loss + l_gt
+
+        wandb.log({"iteration": iteration,
+                  "epoch": epoch, "total loss after refinment": total_loss})
         total_loss.backward()
         torch.nn.utils.clip_grad_norm_(network.parameters(), grad_clip)
         torch.nn.utils.clip_grad_norm_(network_gt.parameters(), grad_clip)
@@ -216,3 +203,44 @@ def train_epoch(dataloader, network, network_gt, optimizer, loss, loss_local_1, 
     print('Local Loss 2: %.4f' % (mean_loss_local_2 / iteration))
     print('Global Loss: %.4f' % (mean_loss_glob / iteration))
     print('Global Loss - Refined: %.4f' % (mean_loss_gt / iteration))
+
+def setup_wandb_run(
+    project_name: str,
+    run_group: str,
+    fold: int,
+    lr: float,
+    num_epochs: int,
+    model_architecture: str,
+    num_workers: int,
+    batchsize:int,
+    seed:int
+):
+    """
+    Sets a new run up (used for k-fold)
+    :param str project_name: Name of the project in wandb.
+    :param str run_group: Name of the project in wandb.
+    :param str fold: number of the executing fold
+    :param int lr: learning rate of the model
+    :param int num_epochs: number of epochs to train
+    :param str model_architecture: Modeltype (architectur) of the model
+    :param int num_workers
+    :param int batchsize
+    :param int seed
+    """
+    # init wandb
+    run = wandb.init(
+        settings=wandb.Settings(start_method="thread"),
+        project=project_name,
+        entity="agroluege",
+        name=f"{fold}-Fold",
+        group=run_group,
+        config={
+            "learning rate": lr,
+            "epochs": num_epochs,
+            "model architecture": model_architecture,
+            "num workers": num_workers,
+            "batchsize":batchsize,
+            "seed": seed
+        },
+    )
+    return run

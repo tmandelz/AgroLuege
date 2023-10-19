@@ -5,7 +5,7 @@ import torch.optim
 from tqdm import tqdm
 import numpy as np
 from sklearn.metrics import confusion_matrix as sklearn_cm
-
+import wandb
 def test(model, model_gt, dataloader, level=3):
     model.eval()
 
@@ -111,7 +111,7 @@ def print_report(overall_accuracy, kappa, precision, recall, f1, cl_acc):
     return cl_acc
 
 
-def evaluate_fieldwise(model, model_gt, dataset, batchsize=1, workers=8, viz=False, fold_num=5, level=3,
+def evaluate_fieldwise(model, model_gt, dataset,epoch, batchsize=1, workers=8, viz=False, fold_num=5, level=3,
                         ignore_undefined_classes=False):
     model.eval()
     model_gt.eval()
@@ -154,6 +154,7 @@ def evaluate_fieldwise(model, model_gt, dataset, batchsize=1, workers=8, viz=Fal
         confusion_matrix = build_confusion_matrix(targets_wo_unknown, predictions_refined_wo_unknown)
     else:
         confusion_matrix = build_confusion_matrix(targets_wo_unknown, predictions_wo_unknown)
+    wandb.log({"epoch":epoch,"confusion matrix":confusion_matrix})
     print_report(*confusion_matrix_to_accuraccies(confusion_matrix))
 
 
@@ -188,10 +189,10 @@ def evaluate_fieldwise(model, model_gt, dataset, batchsize=1, workers=8, viz=Fal
         confusion_matrix = build_confusion_matrix(targets_wo_unknown, prediction_wo_fieldwise_refined)
     else:
         confusion_matrix = build_confusion_matrix(targets_wo_unknown, prediction_wo_fieldwise)
-
+        
     print_report(*confusion_matrix_to_accuraccies(confusion_matrix))
     pix_accuracy = np.sum( prediction_wo_fieldwise_refined==targets_wo_unknown ) / prediction_wo_fieldwise_refined.shape[0]
-
+    wandb.log({"epoch":epoch,"confusion matrix refined":confusion_matrix,"Pixel Accuracy":pix_accuracy})
     # Save for the visulization
     if viz:
         prediction_wo_fieldwise = prediction_wo_fieldwise.reshape(-1, 24, 24)
