@@ -14,7 +14,7 @@ Sorghum (0.07%) 27.0
 Vegetables (2.76%) 82.3
 Pumpkin (0.03%) 14.2
 Chicory (0.07%) 30.8
-SugarBeet (4.26%) 97.2
+Sugar_beets (4.26%) 97.2
 Beets (0.01%) 0.0
 Potatoes (1.65%) 86.6
 Sunflowers (1.05%) 92.8
@@ -23,13 +23,13 @@ Hemp (0.02%) 3.1
 Soy (0.37%) 87.4
 WinterRapeseed (3.21%) 97.6
 SummerRapeseed (0.02%) 0.0
-FieldBean (0.15%) 88.3
+Field_bean (0.15%) 88.3
 Peas (0.32%) 82.4
 Lupine (<0.01%) 0.0
 Tobacco (0.03%) 48.5
 Mustard (<0.01%) 0.0
 Legumes (0.05%) 78.0
-CropMix (0.08%) 39.7
+MixedCrop (0.08%) 39.7
 Meadow (47.76%) 94.9
 Pasture (8.20%) 42.4
 Biodiversity (0.04%) 0.0
