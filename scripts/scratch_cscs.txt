@@ -1,0 +1,5 @@
+ssh daint
+ls 
+echo $SCRATCH
+ln -s $SCRATCH scratch
+ls scratch
