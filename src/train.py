@@ -1,5 +1,4 @@
 import torch
-import numpy as np
 torch.backends.cudnn.deterministic = True
 torch.backends.cudnn.benchmark = False
 import torch.nn
@@ -10,6 +9,7 @@ from models.multi_stage_sequenceencoder import multistageSTARSequentialEncoder
 from models.networkConvRef import model_2DConv
 from src.eval import evaluate_fieldwise
 import wandb
+import numpy as np
 
 def main(
         datadir=None,
@@ -37,13 +37,9 @@ def main(
         apply_cm=None,
         project="test",
         run_group="test",
-        model_architectur = "ms-convstar"
-        
-
-):
+        model_architectur = "ms-convstar"):
     if not os.path.exists(checkpoint_dir):
         os.makedirs(checkpoint_dir)
-
     np.random.seed(seed)
     torch.manual_seed(seed)
 
@@ -133,7 +129,7 @@ def main(
         if epoch % 1 == 0:
 
             print("\n Eval on test set")
-            test_acc = evaluate_fieldwise(network, network_gt, testdataset,epoch, batchsize=batchsize,workers=0)
+            test_acc = evaluate_fieldwise(network, network_gt, testdataset,epoch=epoch, batchsize=batchsize,workers=0,n_epochs=epochs)
 
             if checkpoint_dir is not None:
                 checkpoint_name = os.path.join(checkpoint_dir, name + '_epoch_' + str(epoch) + "_model.pth")
@@ -143,7 +139,15 @@ def main(
                     torch.save({'network_state_dict': network.state_dict(),
                                 'network_gt_state_dict': network_gt.state_dict(),
                                 'optimizerA_state_dict': optimizer.state_dict()}, checkpoint_name)
-
+    evaluate_fieldwise(network, network_gt, testdataset, batchsize=batchsize,epoch=epochs ,level=1, fold_num=fold_num,workers=workers,n_epochs=epochs)
+    evaluate_fieldwise(network, network_gt, testdataset, batchsize=batchsize,epoch=epochs, level=2, fold_num=fold_num,workers=workers,n_epochs=epochs)
+    # Bug WandB
+    wandb.log({f"confusion matrix_bevor_field_majority_level_3":wandb.Image("./wandb/bug_wandb_lv3.png"),
+                   f"confusion matrix_bevor_field_majority_level_2":wandb.Image(f"./wandb/bug_wandb_lv{2}.png"),
+                   f"confusion matrix_bevor_field_majority_level_1":wandb.Image(f"./wandb/bug_wandb_lv{1}.png"),
+                   f"confusion matrix_level_3":wandb.Image(f"./wandb/bug_wandb_field_lv3.png"),
+                   f"confusion matrix_level_2": wandb.Image("./wandb/bug_wandb_field_lv2.png"),
+                   f"confusion matrix_level_1": wandb.Image("./wandb/bug_wandb_field_lv1.png")})
 
 def train_epoch(dataloader, network, network_gt, optimizer, loss, loss_local_1, loss_local_2, lambda_1,
                 lambda_2, stage, grad_clip,epoch):
@@ -155,7 +159,7 @@ def train_epoch(dataloader, network, network_gt, optimizer, loss, loss_local_1, 
     mean_loss_local_1 = 0.
     mean_loss_local_2 = 0.
     mean_loss_gt = 0.
-
+    
     for iteration, data in enumerate(dataloader):
         optimizer.zero_grad()
 
