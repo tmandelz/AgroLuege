@@ -2,3 +2,4 @@
 *.csv filter=lfs diff=lfs merge=lfs -text
 raw_data/** filter=lfs diff=lfs merge=lfs -text
 raw_data/ZueriCrop/ZueriCrop.hdf5 filter=lfs diff=lfs merge=lfs -text
+*.pt filter=lfs diff=lfs merge=lfs -text
