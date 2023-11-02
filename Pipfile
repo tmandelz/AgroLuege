@@ -17,6 +17,7 @@ sklearn = "*"
 geopandas = "*"
 h5py = "*"
 tables = "*"
+rasterio = "*"
 
 [dev-packages]
 
