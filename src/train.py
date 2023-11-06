@@ -124,13 +124,8 @@ def main(
         # call LR scheduler
         lr_scheduler.step()
 
-        # evaluate model
-        #if epoch > 1 and epoch % 1 == 0: change back after testing
         if epoch % 1 == 0:
-
-            print("\n Eval on test set")
             test_acc = evaluate_fieldwise(network, network_gt, testdataset,epoch=epoch, batchsize=batchsize,workers=0,n_epochs=epochs)
-
             if checkpoint_dir is not None:
                 checkpoint_name = os.path.join(checkpoint_dir, name + '_epoch_' + str(epoch) + "_model.pth")
                 if test_acc > best_test_acc:
@@ -141,13 +136,7 @@ def main(
                                 'optimizerA_state_dict': optimizer.state_dict()}, checkpoint_name)
     evaluate_fieldwise(network, network_gt, testdataset, batchsize=batchsize,epoch=epochs ,level=1, fold_num=fold_num,workers=workers,n_epochs=epochs)
     evaluate_fieldwise(network, network_gt, testdataset, batchsize=batchsize,epoch=epochs, level=2, fold_num=fold_num,workers=workers,n_epochs=epochs)
-    # Bug WandB
-    wandb.log({f"confusion matrix_bevor_field_majority_level_3":wandb.Image("./wandb/bug_wandb_lv3.png"),
-                   f"confusion matrix_bevor_field_majority_level_2":wandb.Image(f"./wandb/bug_wandb_lv{2}.png"),
-                   f"confusion matrix_bevor_field_majority_level_1":wandb.Image(f"./wandb/bug_wandb_lv{1}.png"),
-                   f"confusion matrix_level_3":wandb.Image(f"./wandb/bug_wandb_field_lv3.png"),
-                   f"confusion matrix_level_2": wandb.Image("./wandb/bug_wandb_field_lv2.png"),
-                   f"confusion matrix_level_1": wandb.Image("./wandb/bug_wandb_field_lv1.png")})
+
 
 def train_epoch(dataloader, network, network_gt, optimizer, loss, loss_local_1, loss_local_2, lambda_1,
                 lambda_2, stage, grad_clip,epoch):
@@ -159,8 +148,8 @@ def train_epoch(dataloader, network, network_gt, optimizer, loss, loss_local_1, 
     mean_loss_local_1 = 0.
     mean_loss_local_2 = 0.
     mean_loss_gt = 0.
-    
     for iteration, data in enumerate(dataloader):
+        n +=1
         optimizer.zero_grad()
 
         input, target_glob, target_local_1, target_local_2 = data
@@ -203,10 +192,6 @@ def train_epoch(dataloader, network, network_gt, optimizer, loss, loss_local_1, 
         torch.nn.utils.clip_grad_norm_(network_gt.parameters(), grad_clip)
         optimizer.step()
 
-    print('Local Loss 1: %.4f' % (mean_loss_local_1 / iteration))
-    print('Local Loss 2: %.4f' % (mean_loss_local_2 / iteration))
-    print('Global Loss: %.4f' % (mean_loss_glob / iteration))
-    print('Global Loss - Refined: %.4f' % (mean_loss_gt / iteration))
 
 def setup_wandb_run(
     project_name: str,
