@@ -9,6 +9,7 @@ import wandb
 import pandas as pd
 import matplotlib.pyplot as plt
 import seaborn as sns
+import matplotlib.patches as mpatches
 
 level_hierarchy  =pd.read_csv("./Level_hierarchy.csv").drop(columns=["LNF_code","Unnamed: 0","GT"]).drop_duplicates()
 
@@ -19,7 +20,9 @@ def test(model, model_gt, dataloader, level=3):
     targets_list = list()
     gt_instance_list = list()
     logprobabilities_refined = list()
+    n = 0
     for iteration, data in tqdm(enumerate(dataloader)):
+        n +=1
         if level==1:
             inputs, _, targets, _, gt_instance = data
         elif level ==2:
@@ -58,7 +61,45 @@ def test(model, model_gt, dataloader, level=3):
             logprobabilities.append(z3)
 
         logprobabilities_refined.append(z3_refined)
+        if n > 20:
+            break
     return np.vstack(logprobabilities), np.concatenate(targets_list), np.vstack(gt_instance_list), np.vstack(logprobabilities_refined)
+
+def plot_fields(targets,predictions,level_hierarchy=level_hierarchy):
+    random_fields = np.random.choice(list(range(0,targets.shape[0])),size=8)
+    data_list = np.vstack((targets[random_fields],predictions[random_fields]))
+    # Create a colormap that spans the range of unique numbers
+    all_unique_numbers = np.unique(data_list)
+    colors = plt.cm.viridis(np.linspace(0, 1, len(all_unique_numbers)))
+    color_map = {num: colors[i] for i, num in enumerate(sorted(all_unique_numbers))}
+
+    fig, axes = plt.subplots(2, 8, figsize=(20, 4))
+    axes_flat = axes.flatten()
+
+    for i, data in enumerate(data_list):
+        # Create the heatmap for the current data array without a color bar
+        used_colors = list(map(color_map.get, np.unique(data)) )
+        sns.heatmap(data, cmap=used_colors, cbar=False, ax=axes_flat[i])
+        if i < 8:
+            title_text = "Target"
+            number_field = i
+        else:
+            title_text = "Prediction"
+            number_field = i-8
+        axes_flat[i].set_title(f'{title_text} field {number_field+1}',fontsize = 8)
+        axes_flat[i].set_xticks([])
+        axes_flat[i].set_yticks([])
+        axes_flat[i].set_xticklabels([])
+        axes_flat[i].set_yticklabels([])
+
+
+
+    number_name_dict = level_hierarchy.set_index("level3").loc[:,"level3-name"].to_dict()
+    legend_handles = [mpatches.Patch(color=color_map[value], label=number_name_dict.get(value, 'Unknown')) for value in all_unique_numbers]
+
+    # Add the legend to the last axis or figure
+    fig.legend(handles=legend_handles, title='Crop Classes', loc='center right', bbox_to_anchor=(1, 0.5))
+    plt.tight_layout(rect=[0, 0, 0.9, 1])
 
 
 def confusion_matrix_to_accuraccies(confusion_matrix):
@@ -123,7 +164,7 @@ def evaluate_fieldwise(model, model_gt, dataset,epoch,n_epochs, batchsize=1, wor
     model.eval()
     model_gt.eval()
 
-    dataloader = torch.utils.data.DataLoader(dataset=dataset, batch_size=batchsize, num_workers=workers)
+    dataloader = torch.utils.data.DataLoader(dataset=dataset, batch_size=batchsize, num_workers=workers,shuffle=True)
     logprobabilites, targets, gt_instance, logprobabilites_refined = test(model, model_gt, dataloader, level)
     predictions = logprobabilites.argmax(1)
     predictions_refined = logprobabilites_refined.argmax(1)
@@ -162,6 +203,9 @@ def evaluate_fieldwise(model, model_gt, dataset,epoch,n_epochs, batchsize=1, wor
         if n_epochs-1 == epoch:
             plt.savefig("./wandb/bug_wandb_lv3.png")
             # wandb.log({f"confusion matrix_bevor_field_majority_level_{level}":wandb.Image("./wandb/bug_wandb_lv3.png")})
+            plt.close()
+            plot_fields(targets.reshape(-1, 24, 24),predictions_refined.reshape(-1, 24, 24))
+            wandb.log({"Example Fields bevor field majority": wandb.Image(plt)})
         plt.close()
     else:
         level_2_1= level_hierarchy.loc[:,[f"level{level}",f"level{level}-name"]].sort_values(by=f"level{level}").drop_duplicates()
