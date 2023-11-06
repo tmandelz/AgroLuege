@@ -4,16 +4,16 @@ verify_ssl = true
 name = "pypi"
 
 [packages]
+torch = "*"
 torchgeo = {extras = ["datasets", "style", "tests"], version = "*"}
 sentinelhub = {extras = ["common"], version = "*"}
 pandas = "*"
-torch = "*"
 seaborn = "*"
 matplotlib = "*"
 numpy = "*"
 wandb = "*"
 tqdm = "*"
-sklearn = "*"
+scikit-learn = "*"
 geopandas = "*"
 h5py = "*"
 tables = "*"
@@ -22,4 +22,4 @@ rasterio = "*"
 [dev-packages]
 
 [requires]
-python_version = "3.10"
+python_version = ">=3.9"
