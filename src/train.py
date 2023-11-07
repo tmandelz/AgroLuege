@@ -149,7 +149,6 @@ def train_epoch(dataloader, network, network_gt, optimizer, loss, loss_local_1, 
     mean_loss_local_2 = 0.
     mean_loss_gt = 0.
     for iteration, data in enumerate(dataloader):
-        n +=1
         optimizer.zero_grad()
 
         input, target_glob, target_local_1, target_local_2 = data
