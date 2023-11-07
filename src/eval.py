@@ -62,27 +62,27 @@ def test(model, model_gt, dataloader, level=3):
         logprobabilities_refined.append(z3_refined)
     return np.vstack(logprobabilities), np.concatenate(targets_list), np.vstack(gt_instance_list), np.vstack(logprobabilities_refined)
 
-def plot_fields(targets,predictions,level_hierarchy=level_hierarchy):
-    random_fields = np.random.choice(list(range(0,targets.shape[0])),size=8)
+def plot_fields(targets,predictions,level_hierarchy=level_hierarchy,n_samples=8):
+    random_fields = np.random.choice(list(range(0,targets.shape[0])),size=n_samples)
     data_list = np.vstack((targets[random_fields],predictions[random_fields]))
     # Create a colormap that spans the range of unique numbers
     all_unique_numbers = np.unique(data_list)
     colors = plt.cm.viridis(np.linspace(0, 1, len(all_unique_numbers)))
     color_map = {num: colors[i] for i, num in enumerate(sorted(all_unique_numbers))}
 
-    fig, axes = plt.subplots(2, 8, figsize=(20, 4))
+    fig, axes = plt.subplots(2, n_samples, figsize=(20, 4))
     axes_flat = axes.flatten()
 
     for i, data in enumerate(data_list):
         # Create the heatmap for the current data array without a color bar
         used_colors = list(map(color_map.get, np.unique(data)) )
         sns.heatmap(data, cmap=used_colors, cbar=False, ax=axes_flat[i])
-        if i < 8:
+        if i < n_samples:
             title_text = "Target"
             number_field = i
         else:
             title_text = "Prediction"
-            number_field = i-8
+            number_field = i-n_samples
         axes_flat[i].set_title(f'{title_text} field {number_field+1}',fontsize = 8)
         axes_flat[i].set_xticks([])
         axes_flat[i].set_yticks([])
