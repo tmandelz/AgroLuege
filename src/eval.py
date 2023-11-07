@@ -21,7 +21,6 @@ def test(model, model_gt, dataloader, level=3):
     gt_instance_list = list()
     logprobabilities_refined = list()
     for iteration, data in tqdm(enumerate(dataloader)):
-        n +=1
         if level==1:
             inputs, _, targets, _, gt_instance = data
         elif level ==2:
@@ -63,7 +62,7 @@ def test(model, model_gt, dataloader, level=3):
     return np.vstack(logprobabilities), np.concatenate(targets_list), np.vstack(gt_instance_list), np.vstack(logprobabilities_refined)
 
 def plot_fields(targets,predictions,level_hierarchy=level_hierarchy,n_samples=8):
-    random_fields = np.random.choice(list(range(0,targets.shape[0])),size=n_samples)
+    random_fields = np.random.choice(list(range(0,targets.shape[0])),size=n_samples,replace=False)
     data_list = np.vstack((targets[random_fields],predictions[random_fields]))
     # Create a colormap that spans the range of unique numbers
     all_unique_numbers = np.unique(data_list)
@@ -166,7 +165,6 @@ def evaluate_fieldwise(model, model_gt, dataset,epoch,n_epochs, batchsize=1, wor
     elif level == 2 and ignore_undefined_classes:
         valid_crop_samples = (targets != 0) * (targets != 7) * (targets != 9) * (targets != 12)
     elif level == 2:
-
         targets[(targets == 7)] = 12
         targets[(targets == 9)] = 12
         predictions[(predictions == 7)] = 12
@@ -187,7 +185,7 @@ def evaluate_fieldwise(model, model_gt, dataset,epoch,n_epochs, batchsize=1, wor
         label_names = level_hierarchy["level3-name"].values
         confusion_matrix = create_confusion_matrix(targets_wo_unknown,predictions_refined_wo_unknown,unique_labels,label_names,level = 3)
         if n_epochs-1 == epoch:
-            wandb.log({f"confusion matrix_bevor_field_majority_level_{level}":wandb.Image("./wandb/bug_wandb_lv3.png")})
+            wandb.log({f"confusion matrix_bevor_field_majority_level_{level}":wandb.Image(plt)})
             plt.close()
             plot_fields(targets.reshape(-1, 24, 24),predictions_refined.reshape(-1, 24, 24))
             wandb.log({"Example Fields bevor field majority": wandb.Image(plt)})
@@ -196,7 +194,7 @@ def evaluate_fieldwise(model, model_gt, dataset,epoch,n_epochs, batchsize=1, wor
         level_2_1= level_hierarchy.loc[:,[f"level{level}",f"level{level}-name"]].sort_values(by=f"level{level}").drop_duplicates()
         unique_labels = level_2_1[f"level{level}"].values
         label_names = level_2_1[f"level{level}-name"].values
-        confusion_matrix = create_confusion_matrix(targets_wo_unknown,predictions_refined_wo_unknown,unique_labels,label_names,level= level)
+        confusion_matrix = create_confusion_matrix(targets_wo_unknown,predictions_wo_unknown,unique_labels,label_names,level= level)
         wandb.log({f"confusion matrix_bevor_field_majority_level_{level}":wandb.Image(plt)})
         plt.close()
     overall_accuracy, kappa, precision, recall, f1, cl_acc = confusion_matrix_to_accuraccies(confusion_matrix)
