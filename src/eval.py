@@ -9,6 +9,7 @@ import wandb
 import pandas as pd
 import matplotlib.pyplot as plt
 import seaborn as sns
+import matplotlib.patches as mpatches
 
 level_hierarchy  =pd.read_csv("./Level_hierarchy.csv").drop(columns=["LNF_code","Unnamed: 0","GT"]).drop_duplicates()
 
@@ -60,6 +61,42 @@ def test(model, model_gt, dataloader, level=3):
         logprobabilities_refined.append(z3_refined)
     return np.vstack(logprobabilities), np.concatenate(targets_list), np.vstack(gt_instance_list), np.vstack(logprobabilities_refined)
 
+def plot_fields(targets,predictions,level_hierarchy=level_hierarchy,n_samples=8):
+    random_fields = np.random.choice(list(range(0,targets.shape[0])),size=n_samples,replace=False)
+    data_list = np.vstack((targets[random_fields],predictions[random_fields]))
+    # Create a colormap that spans the range of unique numbers
+    all_unique_numbers = np.unique(data_list)
+    colors = plt.cm.viridis(np.linspace(0, 1, len(all_unique_numbers)))
+    color_map = {num: colors[i] for i, num in enumerate(sorted(all_unique_numbers))}
+
+    fig, axes = plt.subplots(2, n_samples, figsize=(20, 4))
+    axes_flat = axes.flatten()
+
+    for i, data in enumerate(data_list):
+        # Create the heatmap for the current data array without a color bar
+        used_colors = list(map(color_map.get, np.unique(data)) )
+        sns.heatmap(data, cmap=used_colors, cbar=False, ax=axes_flat[i])
+        if i < n_samples:
+            title_text = "Target"
+            number_field = i
+        else:
+            title_text = "Prediction"
+            number_field = i-n_samples
+        axes_flat[i].set_title(f'{title_text} field {number_field+1}',fontsize = 8)
+        axes_flat[i].set_xticks([])
+        axes_flat[i].set_yticks([])
+        axes_flat[i].set_xticklabels([])
+        axes_flat[i].set_yticklabels([])
+
+
+
+    number_name_dict = level_hierarchy.set_index("level3").loc[:,"level3-name"].to_dict()
+    legend_handles = [mpatches.Patch(color=color_map[value], label=number_name_dict.get(value, 'Unknown')) for value in all_unique_numbers]
+
+    # Add the legend to the last axis or figure
+    fig.legend(handles=legend_handles, title='Crop Classes', loc='center right', bbox_to_anchor=(1, 0.5))
+    plt.tight_layout(rect=[0, 0, 0.9, 1])
+
 
 def confusion_matrix_to_accuraccies(confusion_matrix):
 
@@ -79,26 +116,11 @@ def confusion_matrix_to_accuraccies(confusion_matrix):
     recall = np.diag(confusion_matrix) / (np.sum(confusion_matrix, axis=1) + 1e-12)
     precision = np.diag(confusion_matrix) / (np.sum(confusion_matrix, axis=0) + 1e-12)
     f1 = (2 * precision * recall) / ((precision + recall) + 1e-12)
-
     # Per class accuracy
     cl_acc = np.diag(confusion_matrix) / (confusion_matrix.sum(1) + 1e-12)
     
-    return overall_accuracy, kappa, precision, recall, f1, cl_acc
+    return overall_accuracy, kappa, precision.mean(), recall.mean(), f1.mean(), cl_acc
 
-
-def print_report(overall_accuracy, kappa, precision, recall, f1, cl_acc):
-    
-    report="""
-    overall accuracy: \t{:.3f}
-    kappa \t\t{:.3f}
-    precision \t\t{:.3f}
-    recall \t\t{:.3f}
-    f1 \t\t\t{:.3f}
-    """.format(overall_accuracy, kappa, precision.mean(), recall.mean(), f1.mean())
-
-    print(report)
-    #print('Per-class acc:', cl_acc)
-    return cl_acc
 
 def create_confusion_matrix(targets,predictions,label_int,label_name,level=3):
     if level == 3:
@@ -116,14 +138,19 @@ def create_confusion_matrix(targets,predictions,label_int,label_name,level=3):
                     columns = label_name)
     sns.heatmap(df_cm,annot=True,cbar=False)
     plt.xticks(rotation = 45)
-    return cm
+
+    # drop missing target labels for calculations
+    labels = np.unique(targets)
+    labels = labels.tolist()
+    cm_for_calculation = sklearn_cm(targets, predictions, labels=labels)
+    return cm_for_calculation
 
 def evaluate_fieldwise(model, model_gt, dataset,epoch,n_epochs, batchsize=1, workers=8, viz=False, fold_num=5, level=3,
                         ignore_undefined_classes=False,level_hierarchy = level_hierarchy):
     model.eval()
     model_gt.eval()
 
-    dataloader = torch.utils.data.DataLoader(dataset=dataset, batch_size=batchsize, num_workers=workers)
+    dataloader = torch.utils.data.DataLoader(dataset=dataset, batch_size=batchsize, num_workers=workers,shuffle=True)
     logprobabilites, targets, gt_instance, logprobabilites_refined = test(model, model_gt, dataloader, level)
     predictions = logprobabilites.argmax(1)
     predictions_refined = logprobabilites_refined.argmax(1)
@@ -138,7 +165,6 @@ def evaluate_fieldwise(model, model_gt, dataset,epoch,n_epochs, batchsize=1, wor
     elif level == 2 and ignore_undefined_classes:
         valid_crop_samples = (targets != 0) * (targets != 7) * (targets != 9) * (targets != 12)
     elif level == 2:
-
         targets[(targets == 7)] = 12
         targets[(targets == 9)] = 12
         predictions[(predictions == 7)] = 12
@@ -153,23 +179,23 @@ def evaluate_fieldwise(model, model_gt, dataset,epoch,n_epochs, batchsize=1, wor
     predictions_refined_wo_unknown = predictions_refined[valid_crop_samples]
 
     labels = np.unique(targets_wo_unknown)
-    print('Num class: ', str(labels.shape[0]))
     
     if level == 3:
         unique_labels = level_hierarchy["level3"].values
         label_names = level_hierarchy["level3-name"].values
         confusion_matrix = create_confusion_matrix(targets_wo_unknown,predictions_refined_wo_unknown,unique_labels,label_names,level = 3)
         if n_epochs-1 == epoch:
-            plt.savefig("./wandb/bug_wandb_lv3.png")
-            # wandb.log({f"confusion matrix_bevor_field_majority_level_{level}":wandb.Image("./wandb/bug_wandb_lv3.png")})
+            wandb.log({f"confusion matrix_bevor_field_majority_level_{level}":wandb.Image(plt)})
+            plt.close()
+            plot_fields(targets.reshape(-1, 24, 24),predictions_refined.reshape(-1, 24, 24))
+            wandb.log({"Example Fields bevor field majority": wandb.Image(plt)})
         plt.close()
     else:
         level_2_1= level_hierarchy.loc[:,[f"level{level}",f"level{level}-name"]].sort_values(by=f"level{level}").drop_duplicates()
         unique_labels = level_2_1[f"level{level}"].values
         label_names = level_2_1[f"level{level}-name"].values
-        confusion_matrix = create_confusion_matrix(targets_wo_unknown,predictions_refined_wo_unknown,unique_labels,label_names,level= level)
-        plt.savefig(f"./wandb/bug_wandb_lv{level}.png")
-        #wandb.log({f"confusion matrix_bevor_field_majority_level_{level}":wandb.Image(plt)})
+        confusion_matrix = create_confusion_matrix(targets_wo_unknown,predictions_wo_unknown,unique_labels,label_names,level= level)
+        wandb.log({f"confusion matrix_bevor_field_majority_level_{level}":wandb.Image(plt)})
         plt.close()
     overall_accuracy, kappa, precision, recall, f1, cl_acc = confusion_matrix_to_accuraccies(confusion_matrix)
     log_wandb = dict(zip(label_names + f"_level_bevor_field_majority_{level}",cl_acc))
@@ -211,14 +237,12 @@ def evaluate_fieldwise(model, model_gt, dataset,epoch,n_epochs, batchsize=1, wor
     if level == 3:
         confusion_matrix = create_confusion_matrix(targets_wo_unknown,prediction_wo_fieldwise_refined,unique_labels,label_names,level=3)
         if n_epochs-1 == epoch:
-            #wandb.log({f"confusion matrix_level_{level}":wandb.Image(plt),"epoch":epoch})
-            plt.savefig("./wandb/bug_wandb_field_lv3.png")
+            wandb.log({f"confusion matrix_level_{level}":wandb.Image(plt),"epoch":epoch})
         plt.close()
             
     else:
         confusion_matrix = create_confusion_matrix(targets_wo_unknown,prediction_wo_fieldwise,unique_labels,label_names,level=level)
-        plt.savefig(f"./wandb/bug_wandb_field_lv{level}.png")
-        #wandb.log({f"confusion matrix_level_{level}":wandb.Image(plt),"epoch":epoch})
+        wandb.log({f"confusion matrix_level_{level}":wandb.Image(plt),"epoch":epoch})
         plt.close()
     overall_accuracy, kappa, precision, recall, f1, cl_acc = confusion_matrix_to_accuraccies(confusion_matrix)
     log_wandb = dict(zip(label_names + f"_level_{level}",cl_acc))
