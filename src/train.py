@@ -148,7 +148,8 @@ def train_epoch(dataloader, network, network_gt, optimizer, loss, loss_local_1, 
     mean_loss_local_1 = 0.
     mean_loss_local_2 = 0.
     mean_loss_gt = 0.
-    for iteration, data in enumerate(dataloader):
+    iteration = 0
+    for _, data in enumerate(dataloader):
         optimizer.zero_grad()
 
         input, target_glob, target_local_1, target_local_2 = data
@@ -190,6 +191,8 @@ def train_epoch(dataloader, network, network_gt, optimizer, loss, loss_local_1, 
         torch.nn.utils.clip_grad_norm_(network.parameters(), grad_clip)
         torch.nn.utils.clip_grad_norm_(network_gt.parameters(), grad_clip)
         optimizer.step()
+        # define next iteration
+        iteration += 1
 
 
 def setup_wandb_run(
