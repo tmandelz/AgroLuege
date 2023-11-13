@@ -8,7 +8,7 @@ import csv
 class Dataset(torch.utils.data.Dataset):
     def __init__(self, path, t=0.9, mode='all', eval_mode=False, fold=None, gt_path='labelsC.csv',
                  time_downsample_factor=2, num_channel=4, apply_cloud_masking=False, cloud_threshold=0.1,
-                 return_cloud_cover=False, small_train_set_mode=False):
+                 return_cloud_cover=False, small_train_set_mode=False,skip_winter=False,n_skip_image =11):
         
         self.data = h5py.File(path, "r", libver='latest', swmr=True)
         self.samples = self.data["data"].shape[0]
@@ -22,6 +22,8 @@ class Dataset(torch.utils.data.Dataset):
         self.apply_cloud_masking = apply_cloud_masking
         self.cloud_threshold = cloud_threshold
         self.return_cloud_cover = return_cloud_cover
+        self.skip_winter = skip_winter
+        self.n_skip_image = n_skip_image
 
         #Get train/test split
         if small_train_set_mode:
@@ -146,6 +148,8 @@ class Dataset(torch.utils.data.Dataset):
 
         # Temporal downsampling
         X = X[0::self.time_downsample_factor,:self.num_channel,...]
+        if self.skip_winter:
+            X = X[self.n_skip_image:(self.max_obs-self.n_skip_image)]
 
         if self.apply_cloud_masking or self.return_cloud_cover:
             CC = CC[0::self.time_downsample_factor,...]

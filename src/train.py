@@ -37,14 +37,28 @@ def main(
         apply_cm=None,
         project="test",
         run_group="test",
-        model_architectur = "ms-convstar"):
+        model_architectur = "ms-convstar",
+        skip_winter=False,
+        n_skip_image =11):
     if not os.path.exists(checkpoint_dir):
         os.makedirs(checkpoint_dir)
     np.random.seed(seed)
     torch.manual_seed(seed)
 
-    traindataset = Dataset(datadir, 0., 'train', False, fold_num, gt_path, num_channel=input_dim, apply_cloud_masking=apply_cm)
-    testdataset = Dataset(datadir, 0., 'test', True, fold_num, gt_path, num_channel=input_dim, apply_cloud_masking=apply_cm)
+    traindataset = Dataset(datadir, 0., 
+                           'train', 
+                           False, 
+                           fold_num,
+                            gt_path, 
+                            num_channel=input_dim, 
+                            apply_cloud_masking=apply_cm,
+                            skip_winter=skip_winter,
+                            n_skip_image=n_skip_image)
+    testdataset = Dataset(datadir, 0., 'test', True, fold_num, gt_path, 
+                          num_channel=input_dim, 
+                          apply_cloud_masking=apply_cm,
+                          skip_winter=skip_winter,
+                          n_skip_image=n_skip_image)
 
     nclasses = traindataset.n_classes
     nclasses_local_1 = traindataset.n_classes_local_1
@@ -113,7 +127,8 @@ def main(
         network_gt.load_state_dict(checkpoint['network_gt_state_dict'])
         optimizer.load_state_dict(checkpoint['optimizerA_state_dict'])
 
-    WBrun = setup_wandb_run(project,run_group,fold_num,lr,epochs,model_architectur,workers,batchsize,seed)
+    WBrun = setup_wandb_run(project,run_group,fold_num,lr,epochs,model_architectur,workers,batchsize,seed,skip_winter,
+                            n_skip_image)
 
     for epoch in range(start_epoch, epochs):
         print("\nEpoch {}".format(epoch+1))
@@ -201,7 +216,9 @@ def setup_wandb_run(
     model_architecture: str,
     num_workers: int,
     batchsize:int,
-    seed:int
+    seed:int,
+    skip_winter:bool,
+    n_skip_image:int
 ):
     """
     Sets a new run up (used for k-fold)
@@ -228,7 +245,9 @@ def setup_wandb_run(
             "model architecture": model_architecture,
             "num workers": num_workers,
             "batchsize":batchsize,
-            "seed": seed
+            "seed": seed,
+            "Skip winter images":skip_winter,
+            "length of skipping":n_skip_image
         },
     )
     return run
