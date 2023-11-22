@@ -151,6 +151,7 @@ def main(
                                 'optimizerA_state_dict': optimizer.state_dict()}, checkpoint_name)
     evaluate_fieldwise(network, network_gt, testdataset, batchsize=batchsize,epoch=epochs ,level=1, fold_num=fold_num,workers=workers,n_epochs=epochs)
     evaluate_fieldwise(network, network_gt, testdataset, batchsize=batchsize,epoch=epochs, level=2, fold_num=fold_num,workers=workers,n_epochs=epochs)
+    WBrun.finish()
 
     WBrun.finish()
 
