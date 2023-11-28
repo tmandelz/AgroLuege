@@ -153,8 +153,6 @@ def main(
     evaluate_fieldwise(network, network_gt, testdataset, batchsize=batchsize,epoch=epochs, level=2, fold_num=fold_num,workers=workers,n_epochs=epochs)
     WBrun.finish()
 
-    WBrun.finish()
-
 
 def train_epoch(dataloader, network, network_gt, optimizer, loss, loss_local_1, loss_local_2, lambda_1,
                 lambda_2, stage, grad_clip,epoch):
