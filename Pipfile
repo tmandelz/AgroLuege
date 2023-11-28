@@ -17,6 +17,8 @@ scikit-learn = "*"
 geopandas = "*"
 h5py = "*"
 tables = "*"
+jupyter = "*"
+ipykernel = "*"
 rasterio = "*"
 
 [dev-packages]
