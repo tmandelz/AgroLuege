@@ -8,7 +8,7 @@ import csv
 class Dataset(torch.utils.data.Dataset):
     def __init__(self, path, t=0.9, mode='all', eval_mode=False, fold=None, gt_path='labelsC.csv',
                  time_downsample_factor=2, num_channel=4, apply_cloud_masking=False, cloud_threshold=0.1,
-                 return_cloud_cover=False, small_train_set_mode=False,skip_winter=False,n_skip_image =11):
+                 return_cloud_cover=False, small_train_set_mode=False,skip_winter=False,n_skip_image =11,normalize=False):
         
         self.data = h5py.File(path, "r", libver='latest', swmr=True)
         self.samples = self.data["data"].shape[0]
@@ -24,6 +24,7 @@ class Dataset(torch.utils.data.Dataset):
         self.return_cloud_cover = return_cloud_cover
         self.skip_winter = skip_winter
         self.n_skip_image = n_skip_image
+        self.normalize = normalize
 
         #Get train/test split
         if small_train_set_mode:
@@ -35,10 +36,19 @@ class Dataset(torch.utils.data.Dataset):
         else:
             self.valid_list = self.split(mode)
         
+        
         self.valid_samples = self.valid_list.shape[0]
 
         self.time_downsample_factor = time_downsample_factor
         self.max_obs = int(142/self.time_downsample_factor)
+
+        if self.normalize:
+            data_for_normalize = np.array((self.data["data"]))
+            data_for_normalize = data_for_normalize[self.valid_list,0::self.time_downsample_factor,:,:,:self.num_channel]
+            if self.skip_winter:
+                data_for_normalize = data_for_normalize[:,self.n_skip_image:(self.max_obs-self.n_skip_image),:,:,:]
+            self.mean = data_for_normalize.mean(axis=(0,1,2,3))
+            self.std = data_for_normalize.std(axis=(0,1,2,3))
 
         gt_path_ = './utils/' + gt_path        
         if not os.path.exists(gt_path_):
@@ -174,9 +184,12 @@ class Dataset(torch.utils.data.Dataset):
         if self.eval_mode:
             gt_instance = torch.from_numpy(gt_instance).float()
 
-        #keep values between 0-1
-        X = X * 1e-4
-        #Previous line should be modified as X = X / 4095 but not tested yet!
+        if self.normalize:
+            X = (X - torch.tensor(self.mean).reshape(1, 4, 1, 1))/torch.tensor(self.std).reshape(1, 4, 1, 1)
+        else:
+            #keep values between 0-1
+            X = X * 1e-4
+            #Previous line should be modified as X = X / 4095 but not tested yet!
 
         # Cloud masking
         if self.apply_cloud_masking:
