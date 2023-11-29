@@ -39,7 +39,8 @@ def main(
         run_group="test",
         model_architectur = "ms-convstar",
         skip_winter=False,
-        n_skip_image =11):
+        n_skip_image =11,
+        normalize=False):
     if not os.path.exists(checkpoint_dir):
         os.makedirs(checkpoint_dir)
     np.random.seed(seed)
@@ -53,12 +54,20 @@ def main(
                             num_channel=input_dim, 
                             apply_cloud_masking=apply_cm,
                             skip_winter=skip_winter,
-                            n_skip_image=n_skip_image)
+                            n_skip_image=n_skip_image,
+                            normalize=normalize)
+    
     testdataset = Dataset(datadir, 0., 'test', True, fold_num, gt_path, 
                           num_channel=input_dim, 
                           apply_cloud_masking=apply_cm,
                           skip_winter=skip_winter,
-                          n_skip_image=n_skip_image)
+                          n_skip_image=n_skip_image,normalize=False)
+    
+    # set testdata normalize values
+    if normalize:
+        testdataset.normalize= True
+        testdataset.mean = traindataset.mean
+        testdataset.std = traindataset.std
 
     nclasses = traindataset.n_classes
     nclasses_local_1 = traindataset.n_classes_local_1
