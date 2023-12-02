@@ -43,13 +43,27 @@ class Dataset(torch.utils.data.Dataset):
         self.max_obs = int(142/self.time_downsample_factor)
 
         if self.normalize:
-            data_for_normalize = np.array((self.data["data"]))
-            data_for_normalize = data_for_normalize[self.valid_list,0::self.time_downsample_factor,:,:,:self.num_channel]
+            # The data size is to big for CSCS uncommentate to calculate mean and std.
+            # data_for_normalize = np.array((self.data["data"]))
+            # data_for_normalize = data_for_normalize[self.valid_list,0::self.time_downsample_factor,:,:,:self.num_channel]
             if self.skip_winter:
-                data_for_normalize = data_for_normalize[:,self.n_skip_image:(self.max_obs-self.n_skip_image),:,:,:]
-            self.mean = data_for_normalize.mean(axis=(0,1,2,3))
-            self.std = data_for_normalize.std(axis=(0,1,2,3))
-
+                #data_for_normalize = data_for_normalize[:,self.n_skip_image:(self.max_obs-self.n_skip_image),:,:,:]
+                print("The normalisation isn't calculatet for the winter")
+            # self.mean = data_for_normalize.mean(axis=(0,1,2,3))
+            # self.std = data_for_normalize.std(axis=(0,1,2,3))
+            mean =[[4836.75234225, 3520.76934393, 3543.90120961, 3396.6287492 ],
+                [4844.94607608, 3505.32859955, 3524.05701042 ,3381.25680174],
+                [4797.79065654 ,3475.58593197 ,3494.61949756 ,3354.50472647],
+                [4769.11861616, 3455.86805827 ,3471.70829289 ,3337.12543101],
+                [4758.93527672, 3451.12031365, 3465.1866644 , 3334.24100273]]
+            std = [[2523.76636143 ,3246.46803864 ,3509.88325476, 3202.3164886 ],
+                    [2519.29353594, 3250.31968163 ,3514.65195633 ,3206.16343223],
+                    [2520.480584  , 3241.21231217 ,3504.32119671, 3195.86863032],
+                    [2520.20675014 ,3229.79061472, 3490.60878594 ,3182.1342567 ],
+                    [2508.50288917, 3215.18287793, 3476.10125397, 3168.29947945]]
+            self.mean = mean[fold-1]
+            self.std = std[fold-1]
+            
         gt_path_ = './utils/' + gt_path        
         if not os.path.exists(gt_path_):
             gt_path_ = './'  + gt_path        
