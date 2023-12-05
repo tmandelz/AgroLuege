@@ -252,12 +252,7 @@ class Dataset(torch.utils.data.Dataset):
         
     def split(self, mode):
         valid = np.zeros(self.samples)
-        if mode=='test':
-            valid[int(self.samples*0.75):] = 1.
-        elif mode=='train':
-            valid[:int(self.samples*0.75)] = 1.
-        else:
-            valid[:] = 1.
+        valid[:] = 1.
 
         w,h = self.data["gt"][0,...,0].shape
         for i in range(self.samples):
