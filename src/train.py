@@ -13,6 +13,7 @@ import numpy as np
 
 def main(
         datadir=None,
+        datadir_bern= None,
         batchsize=4,
         workers=12,
         epochs=1,
@@ -40,28 +41,51 @@ def main(
         model_architectur = "ms-convstar",
         skip_winter=False,
         n_skip_image =11,
-        normalize=False):
+        normalize=False,
+        pretrain_bern= False):
     if not os.path.exists(checkpoint_dir):
         os.makedirs(checkpoint_dir)
     np.random.seed(seed)
     torch.manual_seed(seed)
 
-    traindataset = Dataset(datadir, 0., 
-                           'train', 
-                           False, 
-                           fold_num,
+    if pretrain_bern:
+        traindataset = Dataset(datadir_bern, 0., 
+                            'train', 
+                            False, 
+                            None,
                             gt_path, 
                             num_channel=input_dim, 
                             apply_cloud_masking=apply_cm,
                             skip_winter=skip_winter,
                             n_skip_image=n_skip_image,
                             normalize=normalize)
-    
-    testdataset = Dataset(datadir, 0., 'test', True, fold_num, gt_path, 
-                          num_channel=input_dim, 
-                          apply_cloud_masking=apply_cm,
-                          skip_winter=skip_winter,
-                          n_skip_image=n_skip_image,normalize=False)
+    else:
+        traindataset = Dataset(datadir, 0., 
+                            'train', 
+                            False, 
+                            fold_num,
+                                gt_path, 
+                                num_channel=input_dim, 
+                                apply_cloud_masking=apply_cm,
+                                skip_winter=skip_winter,
+                                n_skip_image=n_skip_image,
+                                normalize=normalize)
+    if pretrain_bern:
+        testdatasets = []
+        for fold in range(1,6):
+            testdataset = Dataset(datadir, 0., 'test', True, fold, gt_path, 
+                            num_channel=input_dim, 
+                            apply_cloud_masking=apply_cm,
+                            skip_winter=skip_winter,
+                            n_skip_image=n_skip_image,normalize=False)
+            testdatasets = testdatasets.append(testdataset)
+
+    else:
+        testdataset = Dataset(datadir, 0., 'test', True, fold_num, gt_path, 
+                            num_channel=input_dim, 
+                            apply_cloud_masking=apply_cm,
+                            skip_winter=skip_winter,
+                            n_skip_image=n_skip_image,normalize=False)
     
     # set testdata normalize values
     if normalize:
@@ -135,13 +159,23 @@ def main(
         network.load_state_dict(checkpoint['network_state_dict'])
         network_gt.load_state_dict(checkpoint['network_gt_state_dict'])
         optimizer.load_state_dict(checkpoint['optimizerA_state_dict'])
-
-    WBrun = setup_wandb_run(project,run_group,fold_num,lr,epochs,model_architectur,workers,batchsize,seed,skip_winter,
-                            n_skip_image)
-
+    
+    if pretrain_bern:
+        wandb_runs = {}
+        wandb_runs["train"] = setup_wandb_run_bern(project,run_group,"train",lr,epochs,model_architectur,workers,batchsize,seed,skip_winter,
+                                n_skip_image)
+        wandb.finish()
+    else:
+        WBrun = setup_wandb_run(project,run_group,fold_num,lr,epochs,model_architectur,workers,batchsize,seed,skip_winter,
+                                n_skip_image)
+        
+    
     for epoch in range(start_epoch, epochs):
         print("\nEpoch {}".format(epoch+1))
 
+        if pretrain_bern:
+            setup_wandb_run_bern(project,run_group,"train",lr,epochs,model_architectur,workers,batchsize,seed,skip_winter,
+                                n_skip_image)
         train_epoch(traindataloader, network, network_gt, optimizer, loss, loss_local_1, loss_local_2,
                     lambda_1=lambda_1, lambda_2=lambda_2, stage=stage, grad_clip=clip,epoch=epoch)
 
@@ -149,7 +183,18 @@ def main(
         lr_scheduler.step()
 
         if epoch % 1 == 0:
-            test_acc = evaluate_fieldwise(network, network_gt, testdataset,epoch=epoch, batchsize=batchsize,workers=0,n_epochs=epochs)
+            if pretrain_bern:
+                for fold in range(1, 6):  # 5 different training sets
+                    # Initialize wandb run at the beginning of the first epoch for each set
+                    if epoch == 1:
+                        wandb_runs[str(fold)] = setup_wandb_run_bern(project,run_group,str(fold),lr,epochs,model_architectur,workers,batchsize,seed,skip_winter,
+                                n_skip_image)
+                    else:
+                        setup_wandb_run_bern(project,run_group,str(fold),lr,epochs,model_architectur,workers,batchsize,seed,skip_winter,
+                                n_skip_image)
+                    test_acc = evaluate_fieldwise(network, network_gt, testdatasets[fold-1],epoch=epoch, batchsize=batchsize,workers=workers,n_epochs=epochs,fold_num=fold)
+            else:
+                test_acc = evaluate_fieldwise(network, network_gt, testdataset,epoch=epoch, batchsize=batchsize,workers=workers,n_epochs=epochs)
             if checkpoint_dir is not None:
                 checkpoint_name = os.path.join(checkpoint_dir, name + '_epoch_' + str(epoch) + "_model.pth")
                 if test_acc > best_test_acc:
@@ -158,8 +203,16 @@ def main(
                     torch.save({'network_state_dict': network.state_dict(),
                                 'network_gt_state_dict': network_gt.state_dict(),
                                 'optimizerA_state_dict': optimizer.state_dict()}, checkpoint_name)
-    evaluate_fieldwise(network, network_gt, testdataset, batchsize=batchsize,epoch=epochs ,level=1, fold_num=fold_num,workers=workers,n_epochs=epochs)
-    evaluate_fieldwise(network, network_gt, testdataset, batchsize=batchsize,epoch=epochs, level=2, fold_num=fold_num,workers=workers,n_epochs=epochs)
+                    
+    if pretrain_bern:
+        for fold in range(1, 6):  # 5 different training sets
+            setup_wandb_run_bern(project,run_group,str(fold),lr,epochs,model_architectur,workers,batchsize,seed,skip_winter,
+                    n_skip_image)
+            evaluate_fieldwise(network, network_gt, testdataset, batchsize=batchsize,epoch=epochs ,level=1, fold_num=fold,workers=workers,n_epochs=epochs)
+            evaluate_fieldwise(network, network_gt, testdataset, batchsize=batchsize,epoch=epochs, level=2, fold_num=fold,workers=workers,n_epochs=epochs)
+    else:
+        evaluate_fieldwise(network, network_gt, testdataset, batchsize=batchsize,epoch=epochs ,level=1, fold_num=fold_num,workers=workers,n_epochs=epochs)
+        evaluate_fieldwise(network, network_gt, testdataset, batchsize=batchsize,epoch=epochs, level=2, fold_num=fold_num,workers=workers,n_epochs=epochs)
     WBrun.finish()
 
 
@@ -261,6 +314,52 @@ def setup_wandb_run(
             "seed": seed,
             "Skip winter images":skip_winter,
             "length of skipping":n_skip_image
-        },
-    )
+        }    )
     return run
+def setup_wandb_run_bern(
+        project_name: str,
+        run_group: str,
+        fold: int,
+        lr: float,
+        num_epochs: int,
+        model_architecture: str,
+        num_workers: int,
+        batchsize:int,
+        seed:int,
+        skip_winter:bool,
+        n_skip_image:int
+    ):
+        """
+        Sets a new run up (used for k-fold)
+        :param str project_name: Name of the project in wandb.
+        :param str run_group: Name of the project in wandb.
+        :param str fold: number of the executing fold
+        :param int lr: learning rate of the model
+        :param int num_epochs: number of epochs to train
+        :param str model_architecture: Modeltype (architectur) of the model
+        :param int num_workers
+        :param int batchsize
+        :param int seed
+        """
+        # init wandb
+        run = wandb.init(
+            settings=wandb.Settings(start_method="thread"),
+            project=project_name,
+            entity="agroluege",
+            name=f"{fold}-Fold",
+            id = f"{project_name}|{fold}",
+            group=run_group,
+            config={
+                "learning rate": lr,
+                "epochs": num_epochs,
+                "model architecture": model_architecture,
+                "num workers": num_workers,
+                "batchsize":batchsize,
+                "seed": seed,
+                "Skip winter images":skip_winter,
+                "length of skipping":n_skip_image
+            },
+            reinit=True, 
+            resume="allow"
+        )
+        return run
