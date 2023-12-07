@@ -25,8 +25,7 @@ def main(
         num_workers=0,
 ):
 
-    testdataset = Dataset_DLBS(datadir, 0., 'test', False, 4, gt_path, num_channel=4, apply_cloud_masking=False,small_train_set_mode=False)
-
+    testdataset = Dataset_DLBS(datadir, 0., 'test',True, 4, gt_path, num_channel=4, apply_cloud_masking=False,small_train_set_mode=False)
     nclasses = testdataset.n_classes
     nclasses_local_1 = testdataset.n_classes_local_1
     nclasses_local_2 = testdataset.n_classes_local_2

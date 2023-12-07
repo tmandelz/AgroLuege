@@ -7,12 +7,13 @@ import os
 from src.datasetdlbs import Dataset_DLBS
 from models.multi_stage_sequenceencoder import multistageSTARSequentialEncoder
 from models.networkConvRef import model_2DConv
-from src.eval_dlbs import evaluate_fieldwise
+from src.eval import evaluate_fieldwise
 import wandb
 import numpy as np
 
 def main(
         datadir=None,
+        datadir_bern= None,
         batchsize=4,
         workers=12,
         epochs=1,
@@ -37,18 +38,19 @@ def main(
         apply_cm=None,
         project="test",
         run_group="test",
-        model_architectur = "ms-convstar",
-        skip_winter=False,
-        n_skip_image =11,
-        normalize=False):
+        model_architectur = "ms-convstar",):
     if not os.path.exists(checkpoint_dir):
         os.makedirs(checkpoint_dir)
     np.random.seed(seed)
     torch.manual_seed(seed)
 
-    traindataset =  Dataset_DLBS(datadir, 0., 'test', False, 3, gt_path, num_channel=4, apply_cloud_masking=False,small_train_set_mode=False)
-    
-    testdataset = Dataset_DLBS(datadir, 0., 'test', False, 4, gt_path, num_channel=4, apply_cloud_masking=False,small_train_set_mode=False)
+    traindataset = Dataset_DLBS(datadir, 0., 'test',False,3,
+                            gt_path, 
+                            num_channel=4, 
+                            apply_cloud_masking=False,small_train_set_mode=False)
+    testdataset = Dataset_DLBS(datadir, 0., 'test', True, 4, gt_path, 
+                            num_channel=4, 
+                            apply_cloud_masking=False,small_train_set_mode=False)
     
     nclasses = traindataset.n_classes
     nclasses_local_1 = traindataset.n_classes_local_1
@@ -116,10 +118,10 @@ def main(
         network.load_state_dict(checkpoint['network_state_dict'])
         network_gt.load_state_dict(checkpoint['network_gt_state_dict'])
         optimizer.load_state_dict(checkpoint['optimizerA_state_dict'])
-
-    WBrun = setup_wandb_run(project,run_group,fold_num,lr,epochs,model_architectur,workers,batchsize,seed,skip_winter,
-                            n_skip_image)
-
+    
+    WBrun = setup_wandb_run(project,run_group,fold_num,lr,epochs,model_architectur,workers,batchsize,seed)
+        
+    
     for epoch in range(start_epoch, epochs):
         print("\nEpoch {}".format(epoch+1))
 
@@ -130,15 +132,16 @@ def main(
         lr_scheduler.step()
 
         if epoch % 1 == 0:
-            test_acc = evaluate_fieldwise(network, network_gt, testdataset,epoch=epoch, batchsize=batchsize,workers=0,n_epochs=epochs)
-            if checkpoint_dir is not None:
-                checkpoint_name = os.path.join(checkpoint_dir, name + '_epoch_' + str(epoch) + "_model.pth")
-                if test_acc > best_test_acc:
-                    print('Model saved! Best val acc:', test_acc)
-                    best_test_acc = test_acc
-                    torch.save({'network_state_dict': network.state_dict(),
-                                'network_gt_state_dict': network_gt.state_dict(),
-                                'optimizerA_state_dict': optimizer.state_dict()}, checkpoint_name)
+                test_acc = evaluate_fieldwise(network, network_gt, testdataset,epoch=epoch, batchsize=batchsize,workers=workers,n_epochs=epochs)
+        if checkpoint_dir is not None:
+            checkpoint_name = os.path.join(checkpoint_dir, name + '_epoch_' + str(epoch) + "_model.pth")
+            if test_acc > best_test_acc:
+                print('Model saved! Best val acc:', test_acc)
+                best_test_acc = test_acc
+                torch.save({'network_state_dict': network.state_dict(),
+                            'network_gt_state_dict': network_gt.state_dict(),
+                            'optimizerA_state_dict': optimizer.state_dict()}, checkpoint_name)
+                
     evaluate_fieldwise(network, network_gt, testdataset, batchsize=batchsize,epoch=epochs ,level=1, fold_num=fold_num,workers=workers,n_epochs=epochs)
     evaluate_fieldwise(network, network_gt, testdataset, batchsize=batchsize,epoch=epochs, level=2, fold_num=fold_num,workers=workers,n_epochs=epochs)
     WBrun.finish()
@@ -211,8 +214,6 @@ def setup_wandb_run(
     num_workers: int,
     batchsize:int,
     seed:int,
-    skip_winter:bool,
-    n_skip_image:int
 ):
     """
     Sets a new run up (used for k-fold)
@@ -240,8 +241,5 @@ def setup_wandb_run(
             "num workers": num_workers,
             "batchsize":batchsize,
             "seed": seed,
-            "Skip winter images":skip_winter,
-            "length of skipping":n_skip_image
-        },
-    )
+        }    )
     return run
