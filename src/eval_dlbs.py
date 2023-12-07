@@ -145,12 +145,13 @@ def create_confusion_matrix(targets,predictions,label_int,label_name,level=3):
     cm_for_calculation = sklearn_cm(targets, predictions, labels=labels)
     return cm_for_calculation
 
-def evaluate_fieldwise(model, model_gt, dataset,epoch,n_epochs, batchsize=1, workers=8, viz=False, fold_num=5, level=3,
-                        ignore_undefined_classes=False,level_hierarchy = level_hierarchy):
+
+def evaluate_fieldwise(model, model_gt, dataset, epoch,n_epochs, batchsize=1, workers=8, viz=False, fold_num=5, level=3,
+                        ignore_undefined_classes=False, level_hierarchy=level_hierarchy):
     model.eval()
     model_gt.eval()
 
-    dataloader = torch.utils.data.DataLoader(dataset=dataset, batch_size=batchsize, num_workers=workers,shuffle=True)
+    dataloader = torch.utils.data.DataLoader(dataset=dataset, batch_size=batchsize, num_workers=workers, shuffle=True)
     logprobabilites, targets, gt_instance, logprobabilites_refined = test(model, model_gt, dataloader, level)
     predictions = logprobabilites.argmax(1)
     predictions_refined = logprobabilites_refined.argmax(1)
@@ -183,29 +184,35 @@ def evaluate_fieldwise(model, model_gt, dataset,epoch,n_epochs, batchsize=1, wor
     if level == 3:
         unique_labels = level_hierarchy["level3"].values
         label_names = level_hierarchy["level3-name"].values
-        confusion_matrix = create_confusion_matrix(targets_wo_unknown,predictions_refined_wo_unknown,unique_labels,label_names,level = 3)
+        confusion_matrix = create_confusion_matrix(targets_wo_unknown, predictions_refined_wo_unknown, unique_labels, label_names, level=3)
         if n_epochs-1 == epoch:
-            wandb.log({f"confusion matrix_bevor_field_majority_level_{level}":wandb.Image(plt)})
+            wandb.log({f"confusion matrix_bevor_field_majority_level_{level}": wandb.Image(plt)})
             plt.close()
-            plot_fields(targets.reshape(-1, 24, 24),predictions_refined.reshape(-1, 24, 24))
+            plot_fields(targets.reshape(-1, 24, 24), predictions_refined.reshape(-1, 24, 24))
             wandb.log({"Example Fields bevor field majority": wandb.Image(plt)})
         plt.close()
     else:
-        level_2_1= level_hierarchy.loc[:,[f"level{level}",f"level{level}-name"]].sort_values(by=f"level{level}").drop_duplicates()
+        level_2_1 = level_hierarchy.loc[:, [f"level{level}", f"level{level}-name"]].sort_values(by=f"level{level}").drop_duplicates()
         unique_labels = level_2_1[f"level{level}"].values
         label_names = level_2_1[f"level{level}-name"].values
-        confusion_matrix = create_confusion_matrix(targets_wo_unknown,predictions_wo_unknown,unique_labels,label_names,level= level)
-        wandb.log({f"confusion matrix_bevor_field_majority_level_{level}":wandb.Image(plt)})
+        element_to_find = '0_unknown'
+        indices = np.where(label_names == element_to_find)[0]
+        if indices.size > 0:
+            index_to_remove = indices[0]
+            label_names = np.delete(label_names, index_to_remove)
+            unique_labels = np.delete(unique_labels, index_to_remove)
+        confusion_matrix = create_confusion_matrix(targets_wo_unknown, predictions_wo_unknown, unique_labels, label_names, level=level)
+        wandb.log({f"confusion matrix_bevor_field_majority_level_{level}": wandb.Image(plt)})
         plt.close()
     overall_accuracy, kappa, precision, recall, f1, cl_acc = confusion_matrix_to_accuraccies(confusion_matrix)
-    log_wandb = dict(zip(label_names + f"_level_bevor_field_majority_{level}",cl_acc))
+    log_wandb = dict(zip(label_names + f"_level_bevor_field_majority_{level}", cl_acc))
     log_wandb |= {"epoch":epoch,
-               f"overall_accuracy_bevor_field_majority_level_{level}":overall_accuracy,
-               f"kappa_bevor_field_majority_level_{level}":kappa,
-               f"precision_bevor_field_majority_level_{level}":precision,
-               f"recall_bevor_field_majority_level_{level}":recall,
-               f"f1_bevor_field_majority_level_{level}":f1,
-               f"perclassacc_bevor_field_majority_level_{level}":cl_acc}
+               f"overall_accuracy_bevor_field_majority_level_{level}": overall_accuracy,
+               f"kappa_bevor_field_majority_level_{level}": kappa,
+               f"precision_bevor_field_majority_level_{level}": precision,
+               f"recall_bevor_field_majority_level_{level}": recall,
+               f"f1_bevor_field_majority_level_{level}": f1,
+               f"perclassacc_bevor_field_majority_level_{level}": cl_acc}
     wandb.log(log_wandb)
     
     prediction_wo_fieldwise = np.zeros_like(targets_wo_unknown)
@@ -235,9 +242,9 @@ def evaluate_fieldwise(model, model_gt, dataset,epoch,n_epochs, batchsize=1, wor
         target_field[count] = target
         count += 1
     if level == 3:
-        confusion_matrix = create_confusion_matrix(targets_wo_unknown,prediction_wo_fieldwise_refined,unique_labels,label_names,level=3)
+        confusion_matrix = create_confusion_matrix(targets_wo_unknown, prediction_wo_fieldwise_refined, unique_labels, label_names, level=3)
         if n_epochs-1 == epoch:
-            wandb.log({f"confusion matrix_level_{level}":wandb.Image(plt),"epoch":epoch})
+            wandb.log({f"confusion matrix_level_{level}": wandb.Image(plt), "epoch":epoch})
         plt.close()
             
     else:
