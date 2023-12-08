@@ -147,7 +147,7 @@ def create_confusion_matrix(targets,predictions,label_int,label_name,level=3):
 
 
 def evaluate_fieldwise(model, model_gt, dataset, epoch,n_epochs, batchsize=1, workers=8, viz=False, fold_num=5, level=3,
-                        ignore_undefined_classes=False, level_hierarchy=level_hierarchy):
+                        ignore_undefined_classes=False, level_hierarchy=level_hierarchy,conf_matrix:bool = True):
     model.eval()
     model_gt.eval()
 
@@ -201,8 +201,10 @@ def evaluate_fieldwise(model, model_gt, dataset, epoch,n_epochs, batchsize=1, wo
             index_to_remove = indices[0]
             label_names = np.delete(label_names, index_to_remove)
             unique_labels = np.delete(unique_labels, index_to_remove)
-        confusion_matrix = create_confusion_matrix(targets_wo_unknown, predictions_wo_unknown, unique_labels, label_names, level=level)
-        wandb.log({f"confusion matrix_bevor_field_majority_level_{level}": wandb.Image(plt)})
+
+            confusion_matrix = create_confusion_matrix(targets_wo_unknown, predictions_wo_unknown, unique_labels, label_names, level=level)
+        if conf_matrix:
+            wandb.log({f"confusion matrix_bevor_field_majority_level_{level}": wandb.Image(plt)})
         plt.close()
     overall_accuracy, kappa, precision, recall, f1, cl_acc = confusion_matrix_to_accuraccies(confusion_matrix)
     log_wandb = dict(zip(label_names + f"_level_bevor_field_majority_{level}", cl_acc))
@@ -248,9 +250,10 @@ def evaluate_fieldwise(model, model_gt, dataset, epoch,n_epochs, batchsize=1, wo
         plt.close()
             
     else:
-        confusion_matrix = create_confusion_matrix(targets_wo_unknown,prediction_wo_fieldwise,unique_labels,label_names,level=level)
-        wandb.log({f"confusion matrix_level_{level}":wandb.Image(plt),"epoch":epoch})
-        plt.close()
+            confusion_matrix = create_confusion_matrix(targets_wo_unknown,prediction_wo_fieldwise,unique_labels,label_names,level=level)
+            if conf_matrix:
+                wandb.log({f"confusion matrix_level_{level}":wandb.Image(plt),"epoch":epoch})
+            plt.close()
     overall_accuracy, kappa, precision, recall, f1, cl_acc = confusion_matrix_to_accuraccies(confusion_matrix)
     log_wandb = dict(zip(label_names + f"_level_{level}",cl_acc))
     pix_accuracy = np.sum( prediction_wo_fieldwise_refined==targets_wo_unknown ) / prediction_wo_fieldwise_refined.shape[0]
