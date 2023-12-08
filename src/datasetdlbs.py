@@ -18,7 +18,7 @@ class Dataset_DLBS(torch.utils.data.Dataset):
 
         # disect temporal dimension
         #Random sample a picture from summer
-        self.random_temporal_sample = random.randint(spring_start, self.data["data"].shape[1]-autumn_start -71)
+        #self.random_temporal_sample = random.randint(spring_start, self.data["data"].shape[1]-autumn_start -71)
 
         self.samples = self.data["data"].shape[0]
         self.max_obs = self.data["data"].shape[1]
@@ -156,7 +156,7 @@ class Dataset_DLBS(torch.utils.data.Dataset):
         # Temporal downsampling
         X = X[0::self.time_downsample_factor, :self.num_channel, ...]
         # get a temporal slice randomly from summer
-        X = X[self.random_temporal_sample:self.random_temporal_sample+1]
+        #X = X[self.random_temporal_sample:self.random_temporal_sample+1]
 
         if self.apply_cloud_masking or self.return_cloud_cover:
             CC = CC[0::self.time_downsample_factor, ...]
