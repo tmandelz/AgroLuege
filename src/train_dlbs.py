@@ -167,10 +167,8 @@ def train_epoch(dataloader, network, network_gt, optimizer, loss,
     iteration = 0
 
     if one_batch_training:
-        print('Warning - One-Batch-Training')
         dataloader = [next(iter(dataloader))]
     for data_index, data in enumerate(dataloader):
-        print(f'Batch:{data_index}')
         optimizer.zero_grad()
 
         input, target_glob, target_local_1, target_local_2 = data
