@@ -1,12 +1,15 @@
 
-![Competition_Logo](link)
-TODO: change banner
+![Field Crops Classification](/_assets/banner_logo.png)
 
 # AgroLuege cx5
 
-This project is a part of the [CX5 Agro Luege Group](https://gitlab.fhnw.ch/thomas.mandelz/AgroLuege) at [Data Science FHNW](https://www.fhnw.ch/en/degree-programmes/engineering/bsc-data-science).
+This project is a part of the [CX5 AgroLuege Group](https://gitlab.fhnw.ch/thomas.mandelz/AgroLuege) at [Data Science FHNW](https://www.fhnw.ch/en/degree-programmes/engineering/bsc-data-science).
 
-This Repository is our solution to the [Competition: Conser-vision Practice Area: Image Classification](https://www.drivendata.org/competitions/87/competition-image-classification-wildlife-conservation/).
+This Repository is our solution for the Challenge-X Course in the at [Data Science FHNW](https://www.fhnw.ch/en/degree-programmes/engineering/bsc-data-science).
+
+* Inspiration from Zuericrop
+* use case direktzahlungen
+* 
 
 ## Project Status: in progress
 
@@ -20,6 +23,8 @@ TODO:
 * Computer Vision
 * Explorative Dataanalysis
 * Data Visualization
+* Remote Sensing
+* Crop Classification
 TODO:
 
 ### Technologies
@@ -28,8 +33,9 @@ TODO:
 * PyTorch
 * wandb
 * numpy
-* Pandas
-* Megadetector
+* pandas
+* eodal
+* sentinelhub
 TODO:
 
 ## Featured Files
@@ -61,6 +67,7 @@ TODO:
 * `pipenv sync`
 
 ## Contributing Members
+
 * **[Daniela Herzig](https://gitlab.fhnw.ch/daniela.herzig)**
 * **[Thomas Mandelz](https://github.com/tmandelz)**
 * **[Jan Zwicky](https://github.com/swiggy123)**
