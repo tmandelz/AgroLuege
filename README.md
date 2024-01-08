@@ -5,17 +5,19 @@
 
 This project is a part of the [CX5 AgroLuege Group](https://gitlab.fhnw.ch/thomas.mandelz/AgroLuege) at [Data Science FHNW](https://www.fhnw.ch/en/degree-programmes/engineering/bsc-data-science).
 
-This Repository is our solution for the Challenge-X Course in the at [Data Science FHNW](https://www.fhnw.ch/en/degree-programmes/engineering/bsc-data-science).
+## Project Status: Completed
 
-* Inspiration from Zuericrop
-* use case direktzahlungen
-* 
+## Project Objective
 
-## Project Status: in progress
+### Current Challenge
 
-## Project Intro/Objective
+In the current scenario, farmers are required to manually input their land areas on AgriPortal to receive state direct payments. This process not only consumes time but also poses the risk of errors.
 
-TODO:
+### Our Vision
+
+Our goal is to provide farmers with more time for their actual work. We leverage the power of Deep Learning and satellite imagery to automatically identify which crops are cultivated on specific land areas. This cutting-edge technology is designed not only to save time but also to minimize error susceptibility.
+
+We have developed advanced Deep Learning models capable of classifying various crops on agricultural land. By analyzing satellite images, we can efficiently and accurately gather information about the cultivation on these areas.
 
 ### Methods Used
 
@@ -25,18 +27,23 @@ TODO:
 * Data Visualization
 * Remote Sensing
 * Crop Classification
-TODO:
+* Big Data
 
 ### Technologies
 
 * Python
 * PyTorch
+* torchgeo
 * wandb
 * numpy
 * pandas
+* seaborn
 * eodal
 * sentinelhub
-TODO:
+* geopandas
+* h5py
+* rasterio
+* MSConvStar Model
 
 ## Featured Files
 
