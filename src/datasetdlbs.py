@@ -4,27 +4,19 @@ import torch
 import numpy as np
 import h5py
 import csv
-import random
 
 
 class Dataset_DLBS(torch.utils.data.Dataset):
     def __init__(self, path, t=0.9, mode='all', eval_mode=False, fold=None, gt_path='labelsC.csv',
                  time_downsample_factor=2, num_channel=4, apply_cloud_masking=False, cloud_threshold=0.1,
-                 return_cloud_cover=False, small_train_set_mode=False,
-                 spring_start:int = 11,
-                 autumn_start:int = 6,seed:int=42):
-        
+                 return_cloud_cover=False, small_train_set_mode=False, augment_rate = 0.66):
         self.data = h5py.File(path, "r", libver='latest', swmr=True)
-
-        # disect temporal dimension
-        #Random sample a picture from summer
-        self.random_temporal_sample = random.randint(spring_start, self.data["data"].shape[1]-autumn_start -71)
 
         self.samples = self.data["data"].shape[0]
         self.max_obs = self.data["data"].shape[1]
         self.spatial = self.data["data"].shape[2:-1]
         self.t = t
-        self.augment_rate = 0.66
+        self.augment_rate = augment_rate
         self.eval_mode = eval_mode
         self.fold = fold
         self.num_channel = num_channel
@@ -156,7 +148,6 @@ class Dataset_DLBS(torch.utils.data.Dataset):
         # Temporal downsampling
         X = X[0::self.time_downsample_factor, :self.num_channel, ...]
         # get a temporal slice randomly from summer
-        X = X[self.random_temporal_sample:self.random_temporal_sample+1]
 
         if self.apply_cloud_masking or self.return_cloud_cover:
             CC = CC[0::self.time_downsample_factor, ...]

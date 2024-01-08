@@ -1,15 +1,16 @@
 import torch
-torch.backends.cudnn.deterministic = True
-torch.backends.cudnn.benchmark = False
 import torch.nn
-import argparse
 import os
+import wandb
+import numpy as np
 from src.datasetdlbs import Dataset_DLBS
 from models.multi_stage_sequenceencoder import multistageSTARSequentialEncoder
 from models.networkConvRef import model_2DConv
-from src.eval import evaluate_fieldwise
-import wandb
-import numpy as np
+from src.eval_dlbs import evaluate_fieldwise
+
+torch.backends.cudnn.deterministic = True
+torch.backends.cudnn.benchmark = False
+
 
 def main(
         datadir=None,
@@ -35,30 +36,28 @@ def main(
         cell=None,
         dropout=None,
         input_dim=None,
-        apply_cm=None,
+        augment_rate=0.,
         project="test",
         run_group="test",
-        model_architectur = "ms-convstar",):
+        model_architecture="ms-convstar",
+        one_batch_training=False):
     if not os.path.exists(checkpoint_dir):
         os.makedirs(checkpoint_dir)
     np.random.seed(seed)
     torch.manual_seed(seed)
 
-    traindataset = Dataset_DLBS(datadir, 0., 'test',False,3,
-                            gt_path, 
-                            num_channel=4, 
-                            apply_cloud_masking=False,small_train_set_mode=False)
-    testdataset = Dataset_DLBS(datadir, 0., 'test', True, 4, gt_path, 
-                            num_channel=4, 
-                            apply_cloud_masking=False,small_train_set_mode=False)
-    
+    traindataset = Dataset_DLBS(datadir, 0., 'test', False, 3, gt_path, num_channel=4,
+                                apply_cloud_masking=False, small_train_set_mode=False, augment_rate=augment_rate)
+    testdataset = Dataset_DLBS(datadir, 0., 'test', True, 4, gt_path, num_channel=4,
+                               apply_cloud_masking=False, small_train_set_mode=False, augment_rate=0.)
+
     nclasses = traindataset.n_classes
     nclasses_local_1 = traindataset.n_classes_local_1
     nclasses_local_2 = traindataset.n_classes_local_2
 
     # set weights close to zero
     LOSS_WEIGHT = torch.ones(nclasses)
-    LOSS_WEIGHT[0] = 10**-40 
+    LOSS_WEIGHT[0] = 10**-40
     LOSS_WEIGHT_LOCAL_1 = torch.ones(nclasses_local_1)
     LOSS_WEIGHT_LOCAL_1[0] = 10**-40
     LOSS_WEIGHT_LOCAL_2 = torch.ones(nclasses_local_2)
@@ -68,21 +67,22 @@ def main(
     s1_2_s3 = traindataset.l1_2_g
     s2_2_s3 = traindataset.l2_2_g
 
-    traindataloader = torch.utils.data.DataLoader(traindataset, batch_size=batchsize, shuffle=True, num_workers=workers)
+    traindataloader = torch.utils.data.DataLoader(
+        traindataset, batch_size=batchsize, shuffle=True, num_workers=workers)
 
-    
-    
     network = multistageSTARSequentialEncoder(24, 24, nstage=stage, nclasses=nclasses,
-                                                  nclasses_l1=nclasses_local_1, nclasses_l2=nclasses_local_2,
-                                                  input_dim=input_dim, hidden_dim=hidden, n_layers=layer, cell=cell,
-                                                  wo_softmax=True)
+                                              nclasses_l1=nclasses_local_1, nclasses_l2=nclasses_local_2,
+                                              input_dim=input_dim, hidden_dim=hidden, n_layers=layer, cell=cell,
+                                              wo_softmax=True)
     network_gt = model_2DConv(nclasses=nclasses, num_classes_l1=nclasses_local_1, num_classes_l2=nclasses_local_2,
                               s1_2_s3=s1_2_s3, s2_2_s3=s2_2_s3,
                               wo_softmax=True, dropout=dropout)
 
     model_parameters = filter(lambda p: p.requires_grad, network.parameters())
-    model_parameters2 = filter(lambda p: p.requires_grad, network_gt.parameters())
-    params = sum([np.prod(p.size()) for p in model_parameters]) + sum([np.prod(p.size()) for p in model_parameters2])
+    model_parameters2 = filter(
+        lambda p: p.requires_grad, network_gt.parameters())
+    params = sum([np.prod(p.size()) for p in model_parameters]) + \
+        sum([np.prod(p.size()) for p in model_parameters2])
     print('Num params: ', params)
 
     optimizer = torch.optim.Adam(list(network.parameters()) + list(network_gt.parameters()), lr=lr,
@@ -93,14 +93,17 @@ def main(
     loss_local_2 = torch.nn.CrossEntropyLoss(weight=LOSS_WEIGHT_LOCAL_2)
 
     if lrS == 1:
-        lr_scheduler = torch.optim.lr_scheduler.StepLR(optimizer, step_size=20, gamma=0.1, last_epoch=-1)
+        lr_scheduler = torch.optim.lr_scheduler.StepLR(
+            optimizer, step_size=20, gamma=0.1, last_epoch=-1)
     elif lrS == 2:
-        lr_scheduler = torch.optim.lr_scheduler.StepLR(optimizer, step_size=10, gamma=0.1, last_epoch=-1)
+        lr_scheduler = torch.optim.lr_scheduler.StepLR(
+            optimizer, step_size=10, gamma=0.1, last_epoch=-1)
     elif lrS == 3:
-        lr_scheduler = torch.optim.lr_scheduler.StepLR(optimizer, step_size=5, gamma=0.5, last_epoch=-1)
+        lr_scheduler = torch.optim.lr_scheduler.StepLR(
+            optimizer, step_size=5, gamma=0.5, last_epoch=-1)
     else:
-        lr_scheduler = torch.optim.lr_scheduler.StepLR(optimizer, step_size=10, gamma=0.5, last_epoch=-1)
-
+        lr_scheduler = torch.optim.lr_scheduler.StepLR(
+            optimizer, step_size=10, gamma=0.5, last_epoch=-1)
 
     print('CUDA available: ', torch.cuda.is_available())
     if torch.cuda.is_available():
@@ -118,37 +121,41 @@ def main(
         network.load_state_dict(checkpoint['network_state_dict'])
         network_gt.load_state_dict(checkpoint['network_gt_state_dict'])
         optimizer.load_state_dict(checkpoint['optimizerA_state_dict'])
-    
-    WBrun = setup_wandb_run(project,run_group,fold_num,lr,epochs,model_architectur,workers,batchsize,seed)
-        
-    
+
+    WBrun = setup_wandb_run(project, run_group, fold_num, lr,
+                            epochs, model_architecture, workers, batchsize, seed)
+
     for epoch in range(start_epoch, epochs):
         print("\nEpoch {}".format(epoch+1))
 
         train_epoch(traindataloader, network, network_gt, optimizer, loss, loss_local_1, loss_local_2,
-                    lambda_1=lambda_1, lambda_2=lambda_2, stage=stage, grad_clip=clip,epoch=epoch)
+                    lambda_1=lambda_1, lambda_2=lambda_2, stage=stage, grad_clip=clip, epoch=epoch, one_batch_training=one_batch_training)
 
         # call LR scheduler
         lr_scheduler.step()
 
-        if epoch % 1 == 0:
-                test_acc = evaluate_fieldwise(network, network_gt, testdataset,epoch=epoch, batchsize=batchsize,workers=workers,n_epochs=epochs)
-        if checkpoint_dir is not None:
-            checkpoint_name = os.path.join(checkpoint_dir, name + '_epoch_' + str(epoch) + "_model.pth")
-            if test_acc > best_test_acc:
-                print('Model saved! Best val acc:', test_acc)
-                best_test_acc = test_acc
-                torch.save({'network_state_dict': network.state_dict(),
-                            'network_gt_state_dict': network_gt.state_dict(),
-                            'optimizerA_state_dict': optimizer.state_dict()}, checkpoint_name)
-                
-    evaluate_fieldwise(network, network_gt, testdataset, batchsize=batchsize,epoch=epochs ,level=1, fold_num=fold_num,workers=workers,n_epochs=epochs)
-    evaluate_fieldwise(network, network_gt, testdataset, batchsize=batchsize,epoch=epochs, level=2, fold_num=fold_num,workers=workers,n_epochs=epochs)
+        if epoch % 1 == 0 and one_batch_training is False:
+            test_acc = evaluate_fieldwise(network, network_gt, testdataset, batchsize=batchsize,
+                                          epoch=epochs, level=1, fold_num=fold_num, workers=0, n_epochs=epochs, conf_matrix=False)
+            if checkpoint_dir is not None:
+                checkpoint_name = os.path.join(
+                    checkpoint_dir, name + '_epoch_' + str(epoch) + "_model.pth")
+                if test_acc > best_test_acc:
+                    print('Model saved! Best val acc:', test_acc)
+                    best_test_acc = test_acc
+                    torch.save({'network_state_dict': network.state_dict(),
+                                'network_gt_state_dict': network_gt.state_dict(),
+                                'optimizerA_state_dict': optimizer.state_dict()}, checkpoint_name)
+
+    evaluate_fieldwise(network, network_gt, testdataset, batchsize=batchsize,
+                       epoch=epochs, level=1, fold_num=fold_num, workers=workers, n_epochs=epochs)
+    # evaluate_fieldwise(network, network_gt, testdataset, batchsize=batchsize,epoch=epochs, level=2, fold_num=fold_num,workers=workers,n_epochs=epochs)
     WBrun.finish()
 
 
-def train_epoch(dataloader, network, network_gt, optimizer, loss, loss_local_1, loss_local_2, lambda_1,
-                lambda_2, stage, grad_clip,epoch):
+def train_epoch(dataloader, network, network_gt, optimizer, loss,
+                loss_local_1, loss_local_2, lambda_1,
+                lambda_2, stage, grad_clip, epoch, one_batch_training: bool = False):
 
     network.train()
     network_gt.train()
@@ -158,7 +165,10 @@ def train_epoch(dataloader, network, network_gt, optimizer, loss, loss_local_1, 
     mean_loss_local_2 = 0.
     mean_loss_gt = 0.
     iteration = 0
-    for _, data in enumerate(dataloader):
+
+    if one_batch_training:
+        dataloader = [next(iter(dataloader))]
+    for data_index, data in enumerate(dataloader):
         optimizer.zero_grad()
 
         input, target_glob, target_local_1, target_local_2 = data
@@ -185,10 +195,11 @@ def train_epoch(dataloader, network, network_gt, optimizer, loss, loss_local_1, 
         mean_loss_local_1 += l_local_1.data.cpu().numpy()
         mean_loss_local_2 += l_local_2.data.cpu().numpy()
         wandb.log({"iteration": iteration,
-                  "epoch": epoch, "loss global": l_glob, "loss local 1": l_local_1,"loss local 2": l_local_2,"total loss":total_loss})
+                  "epoch": epoch, "loss global": l_glob, "loss local 1": l_local_1, "loss local 2": l_local_2, "total loss": total_loss})
 
         # Refinement -------------------------------------------------
-        output_glob_R = network_gt([output_local_1, output_local_2, output_glob])
+        output_glob_R = network_gt(
+            [output_local_1, output_local_2, output_glob])
         l_gt = loss(output_glob_R, target_glob)
         mean_loss_gt += l_gt.data.cpu().numpy()
 
@@ -212,8 +223,8 @@ def setup_wandb_run(
     num_epochs: int,
     model_architecture: str,
     num_workers: int,
-    batchsize:int,
-    seed:int,
+    batchsize: int,
+    seed: int,
 ):
     """
     Sets a new run up (used for k-fold)
@@ -239,7 +250,8 @@ def setup_wandb_run(
             "epochs": num_epochs,
             "model architecture": model_architecture,
             "num workers": num_workers,
-            "batchsize":batchsize,
+            "batchsize": batchsize,
             "seed": seed,
-        }    )
+        },
+    )
     return run
