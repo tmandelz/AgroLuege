@@ -4,6 +4,8 @@
 
 This project is a part of the [CX5 AgroLuege Group](https://gitlab.fhnw.ch/thomas.mandelz/AgroLuege) at [Data Science FHNW](https://www.fhnw.ch/en/degree-programmes/engineering/bsc-data-science).
 
+Our Challenge-X project is inspired by and adapted from the [ZueriCrop Paper](https://arxiv.org/abs/2102.08820) (Turkoglu et al., 2021).
+
 ## Project Status: Completed
 
 ## Project Objective
@@ -73,11 +75,28 @@ TODO:
 * `pipenv sync`
 
 TODO:
-readme
-eth paper link
-folderübersicht
+
+## Overview Folder
+
+| Folder            | Subfolders                        | Description                             |
+|-------------------|----------------------------------|-----------------------------------------|
+| data              |                                  | Directory for data processing, handling and download              |
+| eda               |                                  | Exploratory Data Analysis files        |
+| models            |                                  | Directory for model architecture files   |
+| raw_data          | BernCrop, LANDKULT, ZueriCrop    | Raw data files like HDF5, labels and vector features                        |
+|   └── BernCrop    | tiles                            | folder for single tiles of BernCrop (only local)          |
+|   └── LANDKULT    | data, metadata, symbol, table    | Raw data for LANDKULT data, ground truth and vector features          |
+|       └── data    | tiles                            | Data shapes for tiles         |
+|       └── metadata| layer                            | Metadata for LANDKULT          |
+|   └── ZueriCrop   |                                  |Raw data for ZueriCrop (only local)     |
+| scripts           |                                  | Scripts and code files                 |
+| src               |                                  | Source code files for DL pipeline            |
+
+
+
+## Result Reports
+TODO:
 reports integrieren
-pipenv 
 
 
 
