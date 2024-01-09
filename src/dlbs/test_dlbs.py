@@ -6,7 +6,7 @@ torch.backends.cudnn.deterministic = True
 torch.backends.cudnn.benchmark = False
 import torch.nn
 import argparse
-from src.datasetdlbs import Dataset_DLBS
+from src.dlbs.datasetdlbs import Dataset_DLBS
 from models.multi_stage_sequenceencoder import multistageSTARSequentialEncoder
 from models.networkConvRef import model_2DConv
 from eval import evaluate_fieldwise

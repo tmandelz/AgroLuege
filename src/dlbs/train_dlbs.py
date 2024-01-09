@@ -3,10 +3,10 @@ import torch.nn
 import os
 import wandb
 import numpy as np
-from src.datasetdlbs import Dataset_DLBS
+from src.dlbs.datasetdlbs import Dataset_DLBS
 from models.multi_stage_sequenceencoder import multistageSTARSequentialEncoder
 from models.networkConvRef import model_2DConv
-from src.eval_dlbs import evaluate_fieldwise
+from src.dlbs.eval_dlbs import evaluate_fieldwise
 
 torch.backends.cudnn.deterministic = True
 torch.backends.cudnn.benchmark = False
