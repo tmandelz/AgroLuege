@@ -1,4 +1,3 @@
-
 ![Field Crops Classification](/_assets/banner_logo.png)
 
 # AgroLuege cx5
@@ -72,6 +71,15 @@ TODO:
 * open `cmd`
 * `cd /your/local/github/repofolder/`
 * `pipenv sync`
+
+TODO:
+readme
+eth paper link
+folderübersicht
+reports integrieren
+pipenv 
+
+
 
 ## Contributing Members
 
