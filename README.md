@@ -56,19 +56,6 @@ Here you find our reports of the various experiments:
 * [Increasing Model Complexity](https://wandb.ai/agroluege/MS-Convstar/reports/MSConvStar-erg-nzen-mit-9-Layers--Vmlldzo2NDE2MTcy)
 * [Initialisation and Tuning experiments](https://wandb.ai/agroluege/MS-Convstar/reports/Normalisierung-und-Lernrate--Vmlldzo2NDE2Mjcz)
 
-
-## Featured Files
-
-* To use the best Model with some demo images, use this notebook: [Demo Model Notebook for the best model](demo/demo_modell.ipynb)
-TODO:
-
-## Getting Started
-
-* Clone this repo (for help see this [tutorial](https://help.github.com/articles/cloning-a-repository/)).
-* Data files are being kept [here](data)
-TODO:
-
-
 ## Pipenv for Virtual Environment
 
 ### First install of Environment
@@ -85,8 +72,6 @@ TODO:
 * `cd /your/local/github/repofolder/`
 * `pipenv sync`
 
-TODO:
-
 ## Overview Folder
 
 | Folder            | Subfolders                        | Description                             |
@@ -102,8 +87,6 @@ TODO:
 |   └── ZueriCrop   |                                  |Raw data for ZueriCrop (only local)     |
 | scripts           |                                  | Scripts and code files                 |
 | src               |                                  | Source code files for DL pipeline            |
-
-
 
 
 
