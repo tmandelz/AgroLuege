@@ -46,6 +46,14 @@ We have developed advanced Deep Learning models capable of classifying various c
 * rasterio
 * MSConvStar Model
 
+
+
+## Result Reports
+TODO:
+reports integrieren
+[W&B Experiment Report](https://wandb.ai/agroluege/MS-Convstar/reports/Reproduktion-Z-riCrop-ETHZ--Vmlldzo2MjcyNTA1)
+
+
 ## Featured Files
 
 * To use the best Model with some demo images, use this notebook: [Demo Model Notebook for the best model](demo/demo_modell.ipynb)
@@ -93,10 +101,6 @@ TODO:
 | src               |                                  | Source code files for DL pipeline            |
 
 
-
-## Result Reports
-TODO:
-reports integrieren
 
 
 
