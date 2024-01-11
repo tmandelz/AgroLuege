@@ -49,9 +49,12 @@ We have developed advanced Deep Learning models capable of classifying various c
 
 
 ## Result Reports
-TODO:
-reports integrieren
-[W&B Experiment Report](https://wandb.ai/agroluege/MS-Convstar/reports/Reproduktion-Z-riCrop-ETHZ--Vmlldzo2MjcyNTA1)
+
+Here you find our reports of the various experiments:
+* [Reproduction Report of of ZueriCrop Paper](https://wandb.ai/agroluege/MS-Convstar/reports/Reproduktion-Z-riCrop-ETHZ--Vmlldzo2MjcyNTA1)
+* [Reduction of Noise](https://wandb.ai/agroluege/MS-Convstar/reports/Reduktion-der-Sentinel-Bilder--Vmlldzo2NDE2MjQ3)
+* [Increasing Model Complexity](https://wandb.ai/agroluege/MS-Convstar/reports/MSConvStar-erg-nzen-mit-9-Layers--Vmlldzo2NDE2MTcy)
+* [Initialisation and Tuning experiments](https://wandb.ai/agroluege/MS-Convstar/reports/Normalisierung-und-Lernrate--Vmlldzo2NDE2Mjcz)
 
 
 ## Featured Files
