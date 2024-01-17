@@ -48,15 +48,40 @@ We have developed advanced Deep Learning models capable of classifying various c
 
 ## Jupyter Notebooks
 
-* Verständnis der Labels und deren Hierarchien. Verbindung zwischen LNF Codes (=Landwirtschaftliche Nutzflächen) und Label. Dies dient einerseits zum Verständnis des ZüriCrop Datensatzes und andererseits zur Erstellung des Berndatensatzes, wo wir als Ground Truth nur die LNF-Codes haben und in die gleice Label-Hierarchie bringen müssen wie der ZüriCrop Datensatz 
-[Labels ZüriCrop](https://gitlab.fhnw.ch/thomas.mandelz/AgroLuege/-/blob/main/eda/dataset_testing.ipynb)
-* Detaillierte EDA für Fold 3 [EDA Fold 3](https://gitlab.fhnw.ch/thomas.mandelz/AgroLuege/-/blob/main/eda/eda_Fold3.ipynb?ref_type=heads)
-* New kFold [New k-Fold](https://gitlab.fhnw.ch/thomas.mandelz/AgroLuege/-/blob/main/dataset_newkFold.ipynb?ref_type=heads)
+* Labels Züricrop: 
+Verständnis der Labels und deren Hierarchien. Verbindung zwischen LNF Codes (=Landwirtschaftliche Nutzflächen) und Label. Dies dient einerseits zum Verständnis des ZüriCrop Datensatzes und andererseits zur Erstellung des Berndatensatzes, wo wir als Ground Truth nur die LNF-Codes haben und in die gleice Label-Hierarchie bringen müssen wie der ZüriCrop Datensatz 
 
-* EDA GIS Daten Bern[Ground Truth Bern](https://gitlab.fhnw.ch/thomas.mandelz/AgroLuege/-/blob/main/data/EDA_Bern.ipynb?ref_type=heads)
-* Rastern Bern [Rastern Bern Daten](https://gitlab.fhnw.ch/thomas.mandelz/AgroLuege/-/blob/main/data/rasterize_polygons.ipynb?ref_type=heads)
-* Tiles-Erstellung von SAFE [Tiles](https://gitlab.fhnw.ch/thomas.mandelz/AgroLuege/-/blob/main/eda/create_TilesFiles_from_SAFE.ipynb?ref_type=heads)
-* Erstellung Bern-Datensatz[Bern-Datensatz](https://gitlab.fhnw.ch/thomas.mandelz/AgroLuege/-/blob/main/data/create_BernCrop.ipynb?ref_type=heads)
+    [Labels ZüriCrop](https://gitlab.fhnw.ch/thomas.mandelz/AgroLuege/-/blob/main/eda/dataset_testing.ipynb)
+
+* Detaillierte EDA für Fold 3: 
+Verständnis geschärft im Rahmen DLBS. Untersucht die Label- und Feld-Instanzen und deren Verteilung im Fold 3. Zusätzlich werden die Bilder untersucht. Dies dient zum Verständnis des ZüriCrop Datensatzes.
+
+    [EDA Fold 3](https://gitlab.fhnw.ch/thomas.mandelz/AgroLuege/-/blob/main/eda/eda_Fold3.ipynb?ref_type=heads)
+
+* Label Verteilung pro Fold ZüriCrop: 
+Um einen verbesserten stratified Fold zu erhalten, haben wir die bestehenden Folds detailliert untersucht und deren Erkenntnisse festgehalten:
+
+    [New k-Fold](https://gitlab.fhnw.ch/thomas.mandelz/AgroLuege/-/blob/main/eda/dataset_newkFold.ipynb)
+
+* EDA GIS Daten Bern: 
+Die GIS Daten Bern entsprechen der Ground Truth auf Label und Feld-Instanz Ebene. Dient als Grundlage für die Bestimmung des Perimeters für den Bern-Datensatz.
+
+    [Ground Truth Bern](https://gitlab.fhnw.ch/thomas.mandelz/AgroLuege/-/blob/main/eda/EDA_Bern.ipynb)
+
+* Rastern Bern: 
+Rastern der Ground Truth von Bern sowie Export von Verbindung Label zu Feld-Instanz. Bounding Box erstellen für ETHZ für Abfrage in ihrer Datenbank für die Sentinel2 Bilder.
+
+    [Rastern Bern Daten](https://gitlab.fhnw.ch/thomas.mandelz/AgroLuege/-/blob/main/data/rasterize_polygons.ipynb?ref_type=heads)
+
+* Tiles-Erstellung von SAFE: 
+Die Sentinel2 Daten von der ETHZ wurden im SAFE Format übergeben. Dieses Notebook bringt diese in das richtige Koordinatensystem, plottet diese und legt den Perimeter des Bern-Datensatzes drüber,um zu erkennen, welche Tiles und die damit zugehörigen Daten der ETH für uns wichtig sind. Untersucht des weiteren die Umlaufbahnen.
+
+    [Tiles](https://gitlab.fhnw.ch/thomas.mandelz/AgroLuege/-/blob/main/eda/create_TilesFiles_from_SAFE.ipynb?ref_type=heads)
+
+* Erstellung Bern-Datensatz: 
+Erstellung des hdf5 file. Zusammenstellung der gerasterten Ground Truth sowie die Sentinel2 Daten. Ziel: gleiche Datenstruktur wie ZüriCrop Datensatz.
+
+    [Bern-Datensatz](https://gitlab.fhnw.ch/thomas.mandelz/AgroLuege/-/blob/main/data/create_BernCrop.ipynb?ref_type=heads)
 
 
 
