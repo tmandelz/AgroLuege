@@ -46,6 +46,18 @@ We have developed advanced Deep Learning models capable of classifying various c
 * rasterio
 * MSConvStar Model
 
+## Jupyter Notebooks
+
+* Verständnis der Labels und deren Hierarchien. Verbindung zwischen LNF Codes (=Landwirtschaftliche Nutzflächen) und Label. Dies dient einerseits zum Verständnis des ZüriCrop Datensatzes und andererseits zur Erstellung des Berndatensatzes, wo wir als Ground Truth nur die LNF-Codes haben und in die gleice Label-Hierarchie bringen müssen wie der ZüriCrop Datensatz 
+[Labels ZüriCrop](https://gitlab.fhnw.ch/thomas.mandelz/AgroLuege/-/blob/main/eda/dataset_testing.ipynb)
+* Detaillierte EDA für Fold 3 [EDA Fold 3](https://gitlab.fhnw.ch/thomas.mandelz/AgroLuege/-/blob/main/eda/eda_Fold3.ipynb?ref_type=heads)
+* New kFold [New k-Fold](https://gitlab.fhnw.ch/thomas.mandelz/AgroLuege/-/blob/main/dataset_newkFold.ipynb?ref_type=heads)
+
+* EDA GIS Daten Bern[Ground Truth Bern](https://gitlab.fhnw.ch/thomas.mandelz/AgroLuege/-/blob/main/data/EDA_Bern.ipynb?ref_type=heads)
+* Rastern Bern [Rastern Bern Daten](https://gitlab.fhnw.ch/thomas.mandelz/AgroLuege/-/blob/main/data/rasterize_polygons.ipynb?ref_type=heads)
+* Tiles-Erstellung von SAFE [Tiles](https://gitlab.fhnw.ch/thomas.mandelz/AgroLuege/-/blob/main/eda/create_TilesFiles_from_SAFE.ipynb?ref_type=heads)
+* Erstellung Bern-Datensatz[Bern-Datensatz](https://gitlab.fhnw.ch/thomas.mandelz/AgroLuege/-/blob/main/data/create_BernCrop.ipynb?ref_type=heads)
+
 
 
 ## Result Reports
